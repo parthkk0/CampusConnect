@@ -1,0 +1,16 @@
+{
+    "name": "campusconnect-root",
+    "version": "1.0.0",
+    "description": "Root project manager",
+    "scripts": {
+        "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\" \"npm run start:faceservice\"",
+        "start:backend": "cd BackEnd && npm run dev",
+        "start:frontend": "cd FrontEnd && npm run dev",
+        "start:faceservice": "cd FaceService && .\\venv\\Scripts\\python.exe app.py",
+        "install:all": "cd BackEnd && npm install && cd ../FrontEnd && npm install && cd ../FaceService && .\\venv\\Scripts\\pip.exe install -r requirements.txt",
+        "postinstall": "npm run install:all"
+    },
+    "dependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

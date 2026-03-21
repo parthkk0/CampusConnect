@@ -1,0 +1,1027 @@
+/* ------------------------
+   GLOBAL RESET + TYPOGRAPHY
+------------------------- */
+
+:root {
+  --bg-light: #ffffff;
+  --bg-dark: #1f1f1f;
+  --text-light: #1a1a1a;
+  --text-dark: #f5f5f5;
+
+  --radius: 12px;
+  --transition: 0.25s ease;
+
+  font-family: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  display: block;
+  /* REMOVE center alignment */
+}
+
+/* ------------------------
+   MOBILE-RESPONSIVE UTILITIES
+------------------------- */
+
+/* Box-sizing reset for all elements */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Responsive container */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+}
+
+/* Responsive grid */
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+/* Touch-friendly targets (minimum 44px) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile-first typography */
+.text-xs {
+  font-size: 0.75rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-base {
+  font-size: 1rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+}
+
+@media (min-width: 768px) {
+  .text-2xl {
+    font-size: 1.75rem;
+  }
+
+  .text-3xl {
+    font-size: 2.25rem;
+  }
+}
+
+/* Spacing utilities */
+.p-4 {
+  padding: 1rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.p-8 {
+  padding: 2rem;
+}
+
+.m-4 {
+  margin: 1rem;
+}
+
+.m-6 {
+  margin: 1.5rem;
+}
+
+.m-8 {
+  margin: 2rem;
+}
+
+/* Hide/Show on mobile */
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: block;
+  }
+}
+
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+/* Responsive images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mobile-friendly inputs */
+input,
+textarea,
+select {
+  font-size: 16px;
+  /* Prevents zoom on iOS */
+  max-width: 100%;
+}
+
+
+/* ------------------------
+   LINKS
+------------------------- */
+a {
+  text-decoration: none;
+  color: #3d7afe;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+a:hover {
+  color: #5c8aff;
+}
+
+/* ------------------------
+   HEADINGS
+------------------------- */
+h1 {
+  font-size: 2.6rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+h2 {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* ------------------------
+   BUTTONS
+------------------------- */
+button {
+  border-radius: var(--radius);
+  padding: 0.6em 1.2em;
+  font-size: 1rem;
+  border: 1px solid transparent;
+  background-color: #2a2a2a;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button:hover {
+  border-color: #6c7bff;
+}
+
+button:focus {
+  outline: 3px solid #6c7bff70;
+}
+
+/* ------------------------
+   LIGHT MODE OVERRIDE
+------------------------- */
+@media (prefers-color-scheme: light) {
+  :root {
+    background-color: var(--bg-light);
+    color: var(--text-light);
+  }
+
+  body {
+    background-color: var(--bg-light);
+    color: var(--text-light);
+  }
+
+  button {
+    background-color: #f3f3f3;
+    color: #1a1a1a;
+  }
+}
+
+/* ------------------------
+   KEYFRAME ANIMATIONS
+------------------------- */
+
+/* Bouncy entrance with 3D effect */
+@keyframes bounceInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(100px) scale(0.3) rotateX(-90deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.05) rotateX(10deg);
+  }
+
+  70% {
+    transform: translateY(10px) scale(0.95) rotateX(-5deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0deg);
+  }
+}
+
+/* Floating with rotation */
+@keyframes floatRotate {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  33% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+
+  66% {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Glow pulse with color change */
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.4),
+      0 0 40px rgba(102, 126, 234, 0.2);
+    filter: brightness(1);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(102, 126, 234, 0.8),
+      0 0 80px rgba(102, 126, 234, 0.4),
+      0 0 120px rgba(102, 126, 234, 0.2);
+    filter: brightness(1.2);
+  }
+}
+
+/* Icon spin and bounce */
+@keyframes iconDance {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  25% {
+    transform: scale(1.2) rotate(-15deg);
+  }
+
+  50% {
+    transform: scale(1.3) rotate(15deg);
+  }
+
+  75% {
+    transform: scale(1.2) rotate(-10deg);
+  }
+}
+
+/* Gradient animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Title wave animation */
+@keyframes wave {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Sparkle rotation */
+@keyframes sparkleRotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.3);
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* Card tilt on hover */
+@keyframes tiltShake {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(2deg);
+  }
+
+  75% {
+    transform: rotate(-2deg);
+  }
+}
+
+/* Twinkle effect for stars */
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+/* ------------------------
+   CARD HOVER ANIMATION
+------------------------- */
+.interactive-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: bounceInUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer overlay effect */
+.interactive-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
+  transition: left 0.5s;
+}
+
+.interactive-card:hover::before {
+  left: 100%;
+}
+
+.interactive-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.interactive-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.interactive-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.interactive-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.interactive-card:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+.interactive-card:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+.interactive-card:hover {
+  transform: translateY(-20px) scale(1.08) rotateY(5deg);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(102, 126, 234, 0.5);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Icon animation on card hover */
+.interactive-card:hover .icon-wrapper {
+  animation: iconDance 0.6s ease-in-out;
+}
+
+.footer a:hover {
+  opacity: 0.7;
+}
+
+/* Utility classes for animations */
+.animate-float {
+  animation: floatRotate 4s ease-in-out infinite;
+}
+
+.animate-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkleRotate 3s linear infinite;
+}
+
+/* ------------------------
+   MOBILE-RESPONSIVE COMPONENTS
+------------------------- */
+
+/* BackButton Mobile Styles */
+@media (max-width: 767px) {
+  .mobile-back-btn {
+    padding: 8px 12px !important;
+    top: 10px !important;
+    left: 10px !important;
+    font-size: 13px !important;
+  }
+
+  .mobile-back-btn .back-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Page Container Mobile Styles */
+@media (max-width: 767px) {
+
+  /* Reduce padding on mobile */
+  .page-container {
+    padding: 10px !important;
+  }
+
+  /* Full-width cards on mobile */
+  .card-mobile {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+  }
+
+  /* Single column grids */
+  .grid-mobile {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce font sizes */
+  .title-mobile {
+    font-size: 1.75rem !important;
+  }
+
+  .subtitle-mobile {
+    font-size: 0.875rem !important;
+  }
+
+  /* Touch-friendly buttons */
+  .btn-mobile {
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  /* Reduce modal padding */
+  .modal-mobile {
+    padding: 20px !important;
+    margin: 10px !important;
+  }
+
+  /* Stack form fields */
+  .form-row-mobile {
+    flex-direction: column !important;
+  }
+
+  /* Reduce header size */
+  .header-mobile {
+    padding: 12px 16px !important;
+  }
+
+  /* Hide particle effects on mobile for performance */
+  .particle-mobile {
+    display: none !important;
+  }
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .grid-tablet {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ------------------------
+   NEW UI ANIMATIONS
+------------------------- */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+}
+
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: white;
+  transition: all 0.2s;
+}
+
+.btn-primary-gradient:hover {
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+.bottom-nav-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 16px 24px;
+  z-index: 100;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.glass-card-hover {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 15px 40px 0 rgba(31, 38, 135, 0.5);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.glass-card-hover:focus-within {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-in-out forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUpFade 0.8s ease-out forwards;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+/* Gradients */
+.text-gradient {
+  background: linear-gradient(to right, #ffffff, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-blue {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+}
+
+.bg-gradient-green {
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+}
+
+/* --- PREMIUM GLOW & MICRO-ANIMATIONS --- */
+
+/* 1. Card Hover Animation */
+.dashboard-card {
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1), border-color 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.dashboard-card:hover {
+  transform: scale(1.03) translateY(-4px);
+}
+
+.dashboard-card.glow-emerald:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.dashboard-card.glow-blue:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.dashboard-card.glow-amber:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.dashboard-card.glow-purple:hover {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+  border-color: rgba(168, 85, 247, 0.5);
+}
+
+.dashboard-card.glow-sky:hover {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.35);
+  border-color: rgba(14, 165, 233, 0.5);
+}
+
+/* 2 & 3. Button Ripple & Focus */
+.btn-ripple {
+  position: relative;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-ripple:active {
+  transform: scale(0.97);
+}
+
+.btn-ripple::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: inherit;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 400ms ease-out, opacity 400ms ease-out;
+}
+
+.btn-ripple:active::after {
+  transform: translate(-50%, -50%) scale(2);
+  opacity: 1;
+  transition: 0s;
+}
+
+.focus-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+}
+
+/* 4. Navbar Pulse */
+@keyframes bellPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0px transparent);
+  }
+
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
+  }
+}
+
+.bell-pulse {
+  animation: bellPulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 5. Wallet premium */
+@keyframes shimmerText {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.5) 50%, #fff 100%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmerText 5s linear infinite;
+}
+
+@keyframes animatedBorderBlue {
+  0% {
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  50% {
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.1);
+  }
+
+  100% {
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+}
+
+.wallet-premium-border {
+  opacity: 0;
+  /* Combine BOTH animations to avoid overriding opacity mount */
+  animation: fadeSlideUpMount 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards, animatedBorderBlue 3s ease-in-out infinite;
+}
+
+/* 6. Page load Animation */
+@keyframes mainFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.main-fade-in {
+  opacity: 0;
+  animation: mainFadeIn 400ms ease-out forwards;
+}
+
+@keyframes fadeSlideUpMount {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-slide-up {
+  opacity: 0;
+  animation: fadeSlideUpMount 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Precise stagger delays per user request */
+.delay-80 {
+  animation-delay: 80ms;
+}
+
+.delay-160 {
+  animation-delay: 160ms;
+}
+
+.delay-240 {
+  animation-delay: 240ms;
+}
+
+.delay-320 {
+  animation-delay: 320ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+/* 7. Bottom Navigation Animated Underline */
+.nav-tab-hover {
+  position: relative;
+  overflow: visible !important;
+}
+
+.nav-tab-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background-color: transparent;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1), background-color 250ms ease, box-shadow 250ms ease;
+}
+
+.nav-tab-hover:hover::after,
+.nav-tab-hover.active::after {
+  transform: scaleX(1);
+}
+
+.nav-tab-hover:hover .nav-icon,
+.nav-tab-hover.active .nav-icon {
+  transform: scale(1.05);
+  transition: transform 250ms ease;
+}
+
+/* Tab Specific Colors */
+.tab-blue::after {
+  background-color: #3B82F6;
+}
+
+.tab-blue:hover::after,
+.tab-blue.active::after {
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+
+.tab-emerald::after {
+  background-color: #10B981;
+}
+
+.tab-emerald:hover::after,
+.tab-emerald.active::after {
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.tab-purple::after {
+  background-color: #A855F7;
+}
+
+.tab-purple:hover::after,
+.tab-purple.active::after {
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+}
+
+.tab-amber::after {
+  background-color: #F59E0B;
+}
+
+.tab-amber:hover::after,
+.tab-amber.active::after {
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.tab-sky::after {
+  background-color: #0EA5E9;
+}
+
+
+
+/* ------------------------
+   RESPONSIVE DASHBOARD LAYOUT
+------------------------- */
+
+/* Grid to handle responsive stacking */
+.dashboard-grid {
+  display: grid;
+  gap: 16px;
+}
+
+/* Secondary cards usually take up less space initially */
+.secondary-grid-layout {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Primary cards might need a slightly larger minmax */
+.primary-grid-layout {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* Force vertical stacking on mobile */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px;
+  }
+
+  .mobile-heading {
+    font-size: 32px !important;
+  }
+}
+
+/* ------------------------
+   UX ENHANCEMENTS & A11Y
+------------------------- */
+
+.dashboard-card {
+  cursor: pointer;
+}
+
+/* Focus ring for accessibility across all interactive cards */
+.dashboard-card:focus-visible,
+.secondaryCard:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}

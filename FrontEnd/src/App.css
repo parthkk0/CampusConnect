@@ -1,0 +1,46 @@
+/* Root layout */
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* High-level page container used across screens */
+.page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Shared typography helpers */
+.title-mobile {
+  text-align: center;
+}
+
+.subtitle-mobile {
+  text-align: center;
+}
+
+/* StudentHome header profile trigger */
+.profile-trigger {
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+.profile-trigger:hover {
+  background: #f0f0f0;
+}
+
+/* Accessible focus states */
+.student-card:focus-visible,
+.profile-trigger:focus-visible,
+.logout-btn:focus-visible {
+  outline: 3px solid #0b74de80;
+  outline-offset: 3px;
+}
