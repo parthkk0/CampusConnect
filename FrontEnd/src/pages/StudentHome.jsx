@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { IdCard, Search, LogOut, Bell, MessageSquare, BookOpen, Wallet, ChevronRight } from "lucide-react";
 import axios from "axios";
-
-const BACKEND_URL = `http://${window.location.hostname}:5000/api`;
+import { BACKEND_URL } from "../config";
 
 export default function StudentHome() {
     const navigate = useNavigate();

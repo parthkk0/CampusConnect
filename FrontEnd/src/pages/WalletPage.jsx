@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, Clock } from "lucide-react";
 import BackButton from "../components/BackButton";
-
-const BACKEND_URL = `http://${window.location.hostname}:5000/api`;
+import { BACKEND_URL } from "../config";
 
 export default function WalletPage() {
     const navigate = useNavigate();

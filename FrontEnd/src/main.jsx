@@ -6,19 +6,32 @@ import "./index.css";
 
 import { ClerkProvider } from '@clerk/clerk-react';
 
-// Import your Publishable Key
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Publishable Key")
-}
+// Graceful fallback for local development when Clerk key is not set
+const clerkEnabled = Boolean(PUBLISHABLE_KEY && PUBLISHABLE_KEY !== "pk_test_placeholder");
+
+const Root = () => {
+  if (clerkEnabled) {
+    return (
+      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ClerkProvider>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  );
+};
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ClerkProvider>
+    <Root />
   </React.StrictMode>
 );
+

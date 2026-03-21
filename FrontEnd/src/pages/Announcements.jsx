@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { ArrowLeft, FileText, Image, Download, Clock, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
-const BACKEND_URL = `http://${window.location.hostname}:5000/api`;
+import { BACKEND_URL } from "../config";
 
 export default function Announcements() {
     const navigate = useNavigate();

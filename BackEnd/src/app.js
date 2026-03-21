@@ -15,15 +15,19 @@ app.get("/", (req, res) => {
 });
 
 // MongoDB Connection
-const MONGO_URI_BYPASS = "mongodb://parthkadam1941_db_user:parth123@ac-ibcufcn-shard-00-00.zjcfrlf.mongodb.net:27017,ac-ibcufcn-shard-00-01.zjcfrlf.mongodb.net:27017,ac-ibcufcn-shard-00-02.zjcfrlf.mongodb.net:27017/?ssl=true&replicaSet=atlas-f0gr84-shard-0&authSource=admin&retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) {
+  throw new Error('Missing MONGO_URI environment variable. Set this in BackEnd/.env (excluded from source control).');
+}
+
 mongoose
-  .connect(process.env.MONGO_URI || MONGO_URI_BYPASS)
+  .connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => {
     console.error("❌ MongoDB Connection Error:", err.message);
     console.log("🔄 Retrying MongoDB connection in 5 seconds...");
     setTimeout(() => {
-      mongoose.connect(process.env.MONGO_URI || MONGO_URI_BYPASS)
+      mongoose.connect(MONGO_URI)
         .then(() => console.log("✅ MongoDB Connected on retry"))
         .catch((retryErr) => console.error("❌ MongoDB retry failed:", retryErr.message));
     }, 5000);

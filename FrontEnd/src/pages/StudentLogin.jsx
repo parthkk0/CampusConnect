@@ -3,8 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Lock, ArrowRight } from "lucide-react";
 import axios from "axios";
 import BackButton from "../components/BackButton";
-
-const BACKEND_URL = `http://${window.location.hostname}:5000/api`;
+import { BACKEND_URL } from "../config";
 
 export default function StudentLogin() {
     const navigate = useNavigate();

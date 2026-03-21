@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
-
-const BACKEND_URL = `http://${window.location.hostname}:5000/api`;
+import { BACKEND_URL } from "../config";
 
 export default function FaceVerify({ studentId, onVerified, onError }) {
   const videoRef = useRef(null);

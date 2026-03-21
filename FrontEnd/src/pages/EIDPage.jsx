@@ -4,8 +4,8 @@ import axios from "axios";
 import FaceVerify from "./FaceVerify";
 import BackButton from "../components/BackButton";
 import { Wallet, AlertCircle } from "lucide-react";
+import { BACKEND_URL } from "../config";
 
-const BACKEND_URL = `http://${window.location.hostname}:5000/api`;
 const EID_FEE = 50;
 
 export default function EIDPage() {

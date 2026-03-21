@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Search, Plus, MapPin, Calendar, Phone, CheckCircle, Trash2, ArrowLeft, Camera, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const BACKEND_URL = `http://${window.location.hostname}:5000/api`;
+import { BACKEND_URL } from "../config";
 
 export default function LostFound() {
     const [activeTab, setActiveTab] = useState("lost"); // 'lost' or 'found'

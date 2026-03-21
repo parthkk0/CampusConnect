@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
 async function test() {
-    await mongoose.connect('mongodb://parthkadam1941_db_user:parth123@ac-ibcufcn-shard-00-00.zjcfrlf.mongodb.net:27017,ac-ibcufcn-shard-00-01.zjcfrlf.mongodb.net:27017,ac-ibcufcn-shard-00-02.zjcfrlf.mongodb.net:27017/?ssl=true&replicaSet=atlas-f0gr84-shard-0&authSource=admin&retryWrites=true&w=majority');
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+        throw new Error('Missing MONGO_URI environment variable');
+    }
+    await mongoose.connect(mongoUri);
 
     const student = await mongoose.connection.collection('students').findOne({ course: "BSC IT" });
     const course = await mongoose.connection.collection('courses').findOne({ name: "BSC IT" });
