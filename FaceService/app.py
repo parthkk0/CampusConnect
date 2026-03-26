@@ -169,6 +169,8 @@ def face_status():
     }), 200 if ready else 503
 
 
+import os
+
 if __name__ == "__main__":
     logger.info("Starting FaceService...")
     
@@ -178,5 +180,6 @@ if __name__ == "__main__":
     # Start the server using Waitress for production readiness on Windows
     # Avoids threading and WSGI issues associated with running standard Flask server
     from waitress import serve
-    logger.info("Server listening on http://0.0.0.0:8000")
-    serve(app, host="0.0.0.0", port=8000, threads=4)
+    port = int(os.environ.get("PORT", 7860))
+    logger.info(f"Server listening on http://0.0.0.0:{port}")
+    serve(app, host="0.0.0.0", port=port, threads=4)
