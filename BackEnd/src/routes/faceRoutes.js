@@ -3,7 +3,7 @@ const router = express.Router();
 const axios = require("axios");
 const Student = require("../Model/Student");
 
-const FACE_SERVICE_URL = "http://127.0.0.1:8000";
+const FACE_SERVICE_URL = process.env.FACE_SERVICE_URL || "http://127.0.0.1:8000";
 const FACE_SERVICE_TIMEOUT = 30000; // 30 second timeout for face service calls
 const FACE_SERVICE_RETRY_COUNT = 3;
 const FACE_SERVICE_RETRY_DELAY = 2000; // 2 seconds between retries

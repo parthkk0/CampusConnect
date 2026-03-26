@@ -34,7 +34,7 @@ async function initMailer() {
 }
 initMailer();
 
-const FACE_SERVICE_URL = "http://127.0.0.1:8000";
+const FACE_SERVICE_URL = process.env.FACE_SERVICE_URL || "http://127.0.0.1:8000";
 
 // CHECK if roll number is pre-registered (validation before signup)
 router.post("/validate-roll", async (req, res) => {
