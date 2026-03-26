@@ -34,6 +34,17 @@ def __init_model_background():
     try:
         if DeepFace is None:
             raise ImportError("DeepFace not available.")
+
+        # --- FIX: Check for corrupted weights (Hugging Face often gets 9-byte redirects) ---
+        home = os.path.expanduser("~")
+        weights_path = os.path.join(home, ".deepface", "weights", "facenet_weights.h5")
+        if os.path.exists(weights_path):
+            size_bytes = os.path.getsize(weights_path)
+            if size_bytes < 1000: # If less than 1KB, it's definitely a failed download/redirect
+                logger.warning(f"Corrupted weights detected ({size_bytes} bytes). Deleting {weights_path}")
+                try: os.remove(weights_path)
+                except: pass
+        
         dummy = np.zeros((100, 100, 3), dtype=np.uint8)
         logger.info("Warming up model... (~15s)")
         _ = DeepFace.represent(
