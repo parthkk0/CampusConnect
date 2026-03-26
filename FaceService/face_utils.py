@@ -4,6 +4,7 @@ import base64
 import numpy as np
 import logging
 import threading
+import shutil
 from datetime import datetime
 
 logger = logging.getLogger('FaceUtils')
@@ -35,15 +36,19 @@ def __init_model_background():
         if DeepFace is None:
             raise ImportError("DeepFace not available.")
 
-        # --- FIX: Check for corrupted weights (Hugging Face often gets 9-byte redirects) ---
+        # --- FIX: Bundled Weights (Avoid 404 from broken download URL) ---
         home = os.path.expanduser("~")
-        weights_path = os.path.join(home, ".deepface", "weights", "facenet_weights.h5")
-        if os.path.exists(weights_path):
-            size_bytes = os.path.getsize(weights_path)
-            if size_bytes < 1000: # If less than 1KB, it's definitely a failed download/redirect
-                logger.warning(f"Corrupted weights detected ({size_bytes} bytes). Deleting {weights_path}")
-                try: os.remove(weights_path)
-                except: pass
+        weights_dir = os.path.join(home, ".deepface", "weights")
+        weights_path = os.path.join(weights_dir, "facenet_weights.h5")
+        local_bundled = "facenet_weights.h5"
+
+        if not os.path.exists(weights_path) or os.path.getsize(weights_path) < 1000:
+            if os.path.exists(local_bundled):
+                logger.info(f"Copying bundled weights to {weights_path}")
+                os.makedirs(weights_dir, exist_ok=True)
+                shutil.copy(local_bundled, weights_path)
+            else:
+                logger.warning("No bundled weights found and remote download might fail.")
         
         dummy = np.zeros((100, 100, 3), dtype=np.uint8)
         logger.info("Warming up model... (~15s)")
