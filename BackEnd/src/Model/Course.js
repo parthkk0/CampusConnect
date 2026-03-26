@@ -23,12 +23,7 @@ const CourseSchema = new mongoose.Schema({
         min: 1,
         max: 6
     },
-    semestersPerYear: {
-        type: Number,
-        default: 2,
-        min: 1,
-        max: 4
-    },
+
     isActive: {
         type: Boolean,
         default: true

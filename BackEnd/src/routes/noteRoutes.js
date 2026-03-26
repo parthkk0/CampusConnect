@@ -32,11 +32,11 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// GET ALL NOTES FOR STUDENT (based on course and semester)
-router.get("/for-student/:course/:semester", async (req, res) => {
+// GET ALL NOTES FOR STUDENT (based on course and year)
+router.get("/for-student/:course/:year", async (req, res) => {
     try {
-        const { course, semester } = req.params;
-        console.log(`\n📚 NOTES REQUEST: course="${course}", semester="${semester}"`);
+        const { course, year } = req.params;
+        console.log(`\n📚 NOTES REQUEST: course="${course}", year="${year}"`);
 
         // Find the course (case-insensitive match)
         const courseRegex = new RegExp(`^${course.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
@@ -53,13 +53,13 @@ router.get("/for-student/:course/:semester", async (req, res) => {
         }
         console.log(`✅ Course found: ${courseDoc.name} (${courseDoc.code}), ID: ${courseDoc._id}`);
 
-        // Find all subjects for this course and semester
+        // Find all subjects for this course and year
         const subjects = await Subject.find({
             courseId: courseDoc._id,
-            semester: parseInt(semester)
+            year: parseInt(year)
         });
-        console.log(`📖 Subjects found for semester ${semester}: ${subjects.length}`);
-        subjects.forEach(s => console.log(`   - ${s.name} (${s.code}) [Year ${s.year}, Sem ${s.semester}]`));
+        console.log(`📖 Subjects found for year ${year}: ${subjects.length}`);
+        subjects.forEach(s => console.log(`   - ${s.name} (${s.code}) [Year ${s.year}]`));
 
         const subjectIds = subjects.map(s => s._id);
 
@@ -89,7 +89,7 @@ router.get("/for-student/:course/:semester", async (req, res) => {
         res.json({
             success: true,
             courseName: courseDoc.name,
-            semester: parseInt(semester),
+            year: parseInt(year),
             subjects: Object.values(notesBySubject)
         });
     } catch (error) {

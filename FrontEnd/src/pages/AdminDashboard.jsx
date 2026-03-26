@@ -609,8 +609,13 @@ export default function AdminDashboard() {
                                                 </div>
                                                 <button onClick={(e) => { e.stopPropagation(); handleDeleteCourse(course._id); }} style={styles.deleteBtn}>Delete</button>
                                             </div>
+                                            {course.description && (
+                                                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 4, fontStyle: "italic" }}>
+                                                    {course.description}
+                                                </div>
+                                            )}
                                             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
-                                                {course.totalYears} years • {course.semestersPerYear} semesters/year
+                                                {course.totalYears} years
                                             </div>
                                         </div>
                                     ))}
@@ -634,7 +639,7 @@ export default function AdminDashboard() {
                                                         <div>
                                                             <span style={{ fontWeight: 500, color: "#fff" }}>{subject.name}</span>
                                                             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginLeft: 6 }}>({subject.code})</span>
-                                                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Year {subject.year} • Sem {subject.semester}</div>
+                                                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Year {subject.year}</div>
                                                         </div>
                                                         <button onClick={() => handleDeleteSubject(subject._id)} style={{ ...styles.deleteBtn, padding: "4px 10px", fontSize: 11 }}>Delete</button>
                                                     </div>
@@ -676,7 +681,7 @@ export default function AdminDashboard() {
                                     style={styles.select}
                                 >
                                     <option value="">Select Subject</option>
-                                    {subjects.map(s => <option key={s._id} value={s._id}>{s.name} (Y{s.year} S{s.semester})</option>)}
+                                    {subjects.map(s => <option key={s._id} value={s._id}>{s.name} (Year {s.year})</option>)}
                                 </select>
                             )}
                         </div>
@@ -725,7 +730,6 @@ export default function AdminDashboard() {
                     courseId={selectedCourse._id}
                     courseName={selectedCourse.name}
                     totalYears={selectedCourse.totalYears}
-                    semestersPerYear={selectedCourse.semestersPerYear}
                     onClose={() => setShowSubjectForm(false)}
                     onSuccess={() => { setShowSubjectForm(false); fetchSubjects(selectedCourse._id); }}
                 />
@@ -786,7 +790,6 @@ function AddStudentModal({ onClose, onSuccess }) {
         email: "",
         course: "",
         year: "",
-        semester: "",
         courseFee: "",
     });
     const [error, setError] = useState("");
@@ -820,23 +823,19 @@ function AddStudentModal({ onClose, onSuccess }) {
         setFormData({
             ...formData,
             course: courseObj ? courseObj.name : "",
-            year: "",
-            semester: ""
+            year: ""
         });
     }
 
     // Generate year options based on selected course
     const yearOptions = selectedCourseObj
-        ? Array.from({ length: selectedCourseObj.totalYears }, (_, i) => i + 1)
+        ? Array.from({ length: selectedCourseObj.totalYears }, (_, i) => {
+            const y = i + 1;
+            return { value: y, label: `Year ${y}` };
+          })
         : [];
 
-    // Generate semester options based on selected course and year
-    const semesterOptions = selectedCourseObj && formData.year
-        ? Array.from(
-            { length: selectedCourseObj.semestersPerYear || 2 },
-            (_, i) => (parseInt(formData.year) - 1) * (selectedCourseObj.semestersPerYear || 2) + i + 1
-        )
-        : [];
+
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -911,28 +910,16 @@ function AddStudentModal({ onClose, onSuccess }) {
                         <select
                             name="year"
                             value={formData.year}
-                            onChange={(e) => setFormData({ ...formData, year: e.target.value, semester: "" })}
+                            onChange={handleChange}
                             style={modalStyles.input}
                         >
                             <option value="">Select Year</option>
                             {yearOptions.map(y => (
-                                <option key={y} value={y}>Year {y}</option>
+                                <option key={y.value} value={y.value}>{y.label}</option>
                             ))}
                         </select>
                     )}
-                    {formData.year && (
-                        <select
-                            name="semester"
-                            value={formData.semester}
-                            onChange={handleChange}
-                            style={modalStyles.input}
-                        >
-                            <option value="">Select Semester</option>
-                            {semesterOptions.map(s => (
-                                <option key={s} value={s}>Semester {s}</option>
-                            ))}
-                        </select>
-                    )}
+
                     <input
                         name="courseFee"
                         type="number"
@@ -990,13 +977,13 @@ function BulkUploadModal({ onClose, onSuccess }) {
 
             // Upload to backend
             const token = localStorage.getItem("adminToken");
-            const response = await axios.post(
+            const res = await axios.post(
                 `${BACKEND_URL}/admin/students/bulk-add`,
                 { students },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+                { headers: { Authorization: `Bearer ${token}` }
+            });
 
-            setResults(response.data.results);
+            setResults(res.data.results);
         } catch (error) {
             alert("Upload failed: " + (error.response?.data?.error || error.message));
         } finally {
@@ -1012,7 +999,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                 <div style={modalStyles.help}>
                     Format: <code>roll,name,email,course,year,courseFee</code>
                     <br />
-                    Example: <code>22IT001,John Doe,john@college.edu,CS,2nd,50000</code>
+                    Example: <code>22IT001,John Doe,john@college.edu,CS,2,50000</code>
                 </div>
 
                 <textarea
@@ -1145,6 +1132,7 @@ function AnnouncementModal({ onClose, onSuccess, adminUser }) {
 
         setIsLoading(true);
         try {
+            const token = localStorage.getItem("adminToken");
             await axios.post(`${BACKEND_URL}/announcements`, {
                 title,
                 content,
@@ -1152,6 +1140,8 @@ function AnnouncementModal({ onClose, onSuccess, adminUser }) {
                 attachmentUrl,
                 attachmentName,
                 postedBy: adminUser.username || "Admin"
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             onSuccess();
         } catch (err) {
@@ -1232,7 +1222,6 @@ function CourseModal({ onClose, onSuccess }) {
     const [code, setCode] = useState("");
     const [description, setDescription] = useState("");
     const [totalYears, setTotalYears] = useState(3);
-    const [semestersPerYear, setSemestersPerYear] = useState(2);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -1244,8 +1233,11 @@ function CourseModal({ onClose, onSuccess }) {
         }
         setIsLoading(true);
         try {
-            await axios.post(`http://${window.location.hostname}:5000/api/courses`, {
-                name, code, description, totalYears, semestersPerYear
+            const token = localStorage.getItem("adminToken");
+            await axios.post(`${BACKEND_URL}/courses`, {
+                name, code, description, totalYears
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             onSuccess();
         } catch (err) {
@@ -1263,16 +1255,10 @@ function CourseModal({ onClose, onSuccess }) {
                     <input placeholder="Course Name *" value={name} onChange={(e) => setName(e.target.value)} style={modalStyles.input} />
                     <input placeholder="Course Code *" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} style={modalStyles.input} />
                     <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} style={modalStyles.input} />
-                    <div style={{ display: "flex", gap: 10 }}>
                         <div style={{ flex: 1 }}>
                             <label style={{ fontSize: 12, color: "#666" }}>Total Years</label>
                             <input type="number" min="1" max="6" value={totalYears} onChange={(e) => setTotalYears(parseInt(e.target.value))} style={modalStyles.input} />
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: 12, color: "#666" }}>Semesters/Year</label>
-                            <input type="number" min="1" max="4" value={semestersPerYear} onChange={(e) => setSemestersPerYear(parseInt(e.target.value))} style={modalStyles.input} />
-                        </div>
-                    </div>
                     {error && <div style={modalStyles.error}>{error}</div>}
                     <div style={modalStyles.buttons}>
                         <button type="button" onClick={onClose} style={modalStyles.cancelBtn}>Cancel</button>
@@ -1284,16 +1270,12 @@ function CourseModal({ onClose, onSuccess }) {
     );
 }
 
-// Subject Modal Component
-function SubjectModal({ courseId, courseName, totalYears, semestersPerYear, onClose, onSuccess }) {
+function SubjectModal({ courseId, courseName, totalYears, onClose, onSuccess }) {
     const [name, setName] = useState("");
     const [code, setCode] = useState("");
     const [year, setYear] = useState(1);
-    const [semester, setSemester] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-
-    const totalSemesters = totalYears * semestersPerYear;
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -1303,8 +1285,11 @@ function SubjectModal({ courseId, courseName, totalYears, semestersPerYear, onCl
         }
         setIsLoading(true);
         try {
-            await axios.post(`http://${window.location.hostname}:5000/api/subjects`, {
-                name, code, courseId, year, semester
+            const token = localStorage.getItem("adminToken");
+            await axios.post(`${BACKEND_URL}/subjects`, {
+                name, code, courseId, year
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             onSuccess();
         } catch (err) {
@@ -1321,19 +1306,13 @@ function SubjectModal({ courseId, courseName, totalYears, semestersPerYear, onCl
                 <form onSubmit={handleSubmit}>
                     <input placeholder="Subject Name *" value={name} onChange={(e) => setName(e.target.value)} style={modalStyles.input} />
                     <input placeholder="Subject Code *" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} style={modalStyles.input} />
-                    <div style={{ display: "flex", gap: 10 }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: 12, color: "#666" }}>Year</label>
-                            <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} style={modalStyles.input}>
-                                {[...Array(totalYears)].map((_, i) => <option key={i + 1} value={i + 1}>Year {i + 1}</option>)}
-                            </select>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: 12, color: "#666" }}>Semester</label>
-                            <select value={semester} onChange={(e) => setSemester(parseInt(e.target.value))} style={modalStyles.input}>
-                                {[...Array(totalSemesters)].map((_, i) => <option key={i + 1} value={i + 1}>Sem {i + 1}</option>)}
-                            </select>
-                        </div>
+                    <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: 12, color: "#666" }}>Year</label>
+                        <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} style={modalStyles.input}>
+                            {Array.from({ length: totalYears }, (_, i) => (
+                                <option key={i + 1} value={i + 1}>Year {i + 1}</option>
+                            ))}
+                        </select>
                     </div>
                     {error && <div style={modalStyles.error}>{error}</div>}
                     <div style={modalStyles.buttons}>
@@ -1388,9 +1367,12 @@ function NoteModal({ subjectId, adminUser, onClose, onSuccess }) {
         }
         setIsLoading(true);
         try {
-            await axios.post(`http://${window.location.hostname}:5000/api/notes`, {
+            const token = localStorage.getItem("adminToken");
+            await axios.post(`${BACKEND_URL}/notes`, {
                 title, description, subjectId, fileType, fileUrl, fileName,
                 uploadedBy: adminUser?.username || "Admin"
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             onSuccess();
         } catch (err) {

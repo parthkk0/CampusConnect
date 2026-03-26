@@ -8,9 +8,14 @@ export default function Notes() {
     const navigate = useNavigate();
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [subjectsData, setSubjectsData] = useState([]);
-    const [expandedSubject, setExpandedSubject] = useState(null);
-    const [courseName, setCourseName] = useState("");
+    
+    // New state for dropdown
+    const [allSubjects, setAllSubjects] = useState([]);
+    const [courseObj, setCourseObj] = useState(null);
+    const [selectedSubjectId, setSelectedSubjectId] = useState("");
+    const [notes, setNotes] = useState([]);
+    const [notesLoading, setNotesLoading] = useState(false);
+
     const [previewNote, setPreviewNote] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -19,59 +24,56 @@ export default function Notes() {
         if (stored) {
             const studentData = JSON.parse(stored);
             setStudent(studentData);
-            // If semester is missing from stored data, refresh from API
-            if (!studentData.semester) {
-                refreshStudentData(studentData.roll);
-            } else {
-                fetchNotes(studentData);
-            }
+            fetchAllSubjects(studentData.course);
         } else {
             navigate("/student/login");
         }
     }, [navigate]);
 
-    const refreshStudentData = async (roll) => {
+    const fetchAllSubjects = async (courseName) => {
         try {
-            const res = await axios.get(`${BACKEND_URL}/students/${roll}`);
-            if (res.data.success) {
-                const fresh = res.data.student;
-                // Merge fresh data with stored data and save
-                const stored = JSON.parse(localStorage.getItem("studentUser") || "{}");
-                const updated = { ...stored, ...fresh };
-                localStorage.setItem("studentUser", JSON.stringify(updated));
-                setStudent(updated);
-                if (updated.semester) {
-                    fetchNotes(updated);
-                } else {
-                    setLoading(false);
+            setLoading(true);
+            // 1. Get all courses to find the ID
+            const coursesRes = await axios.get(`${BACKEND_URL}/courses`);
+            if (coursesRes.data.success) {
+                const targetCourse = coursesRes.data.courses.find(c => 
+                    c.name.toLowerCase() === courseName.toLowerCase() || 
+                    c.code.toLowerCase() === courseName.toLowerCase()
+                );
+                
+                if (targetCourse) {
+                    setCourseObj(targetCourse);
+                    // 2. Fetch all subjects for this course
+                    const subjectsRes = await axios.get(`${BACKEND_URL}/subjects/by-course/${targetCourse._id}`);
+                    if (subjectsRes.data.success) {
+                        setAllSubjects(subjectsRes.data.subjects);
+                    }
                 }
             }
         } catch (error) {
-            console.error("Failed to refresh student data:", error);
+            console.error("Failed to fetch subjects:", error);
+        } finally {
             setLoading(false);
         }
     };
 
-    const fetchNotes = async (studentData) => {
+    const handleSubjectChange = async (e) => {
+        const subId = e.target.value;
+        setSelectedSubjectId(subId);
+        setNotes([]);
+        
+        if (!subId) return;
+
         try {
-            setLoading(true);
-            const { course, semester } = studentData;
-
-            if (!course || !semester) {
-                console.error("Missing course or semester:", { course, semester });
-                setLoading(false);
-                return;
-            }
-
-            const res = await axios.get(`${BACKEND_URL}/notes/for-student/${encodeURIComponent(course)}/${semester}`);
+            setNotesLoading(true);
+            const res = await axios.get(`${BACKEND_URL}/notes/by-subject/${subId}`);
             if (res.data.success) {
-                setSubjectsData(res.data.subjects);
-                setCourseName(res.data.courseName);
+                setNotes(res.data.notes);
             }
         } catch (error) {
             console.error("Failed to fetch notes:", error);
         } finally {
-            setLoading(false);
+            setNotesLoading(false);
         }
     };
 
@@ -100,19 +102,12 @@ export default function Notes() {
         document.body.removeChild(link);
     };
 
-    const closePreview = () => {
-        setPreviewNote(null);
-    };
-
-    const toggleSubject = (subjectId) => {
-        setExpandedSubject(expandedSubject === subjectId ? null : subjectId);
-    };
+    const closePreview = () => setPreviewNote(null);
 
     if (!student) return null;
 
     return (
         <div style={styles.page}>
-            {/* Header */}
             <header style={styles.header}>
                 <Link to="/student/home" style={styles.backBtn}>
                     <ArrowLeft size={20} />
@@ -122,98 +117,98 @@ export default function Notes() {
                 <div style={{ width: 80 }}></div>
             </header>
 
-            {/* Course Info */}
-            <div style={styles.courseInfo}>
-                <BookOpen size={20} />
-                <span>{courseName || student.course} - Semester {student.semester}</span>
+            <div style={styles.courseInfoContainer}>
+                <div style={styles.courseInfo}>
+                    <BookOpen size={20} />
+                    <span>{student.course} - Browse Library</span>
+                </div>
+                {courseObj?.description && (
+                    <div style={styles.courseDescription}>
+                        {courseObj.description}
+                    </div>
+                )}
             </div>
 
-            {/* Main Content */}
             <main style={styles.main}>
                 {loading ? (
-                    <div style={styles.loading}>Loading your subjects...</div>
-                ) : !student.semester ? (
-                    <div style={styles.empty}>
-                        <BookOpen size={48} color="#ccc" />
-                        <p>Your semester is not assigned yet.</p>
-                        <p style={{ fontSize: 14, color: "#888" }}>Please contact admin to update your profile.</p>
-                    </div>
-                ) : subjectsData.length === 0 ? (
-                    <div style={styles.empty}>
-                        <BookOpen size={48} color="#ccc" />
-                        <p>No subjects found for your semester.</p>
-                    </div>
+                    <div style={styles.loading}>Loading subjects catalog...</div>
                 ) : (
-                    <div style={styles.subjectsList}>
-                        {subjectsData.map(({ subject, notes }) => (
-                            <div key={subject._id} style={styles.subjectCard}>
-                                {/* Subject Header */}
-                                <div
-                                    style={styles.subjectHeader}
-                                    onClick={() => toggleSubject(subject._id)}
-                                >
-                                    <div style={styles.subjectInfo}>
-                                        <span style={styles.subjectCode}>{subject.code}</span>
-                                        <span style={styles.subjectName}>{subject.name}</span>
-                                    </div>
-                                    <div style={styles.subjectMeta}>
-                                        <span style={styles.noteCount}>{notes.length} notes</span>
-                                        {expandedSubject === subject._id ?
-                                            <ChevronDown size={20} /> :
-                                            <ChevronRight size={20} />
-                                        }
-                                    </div>
-                                </div>
+                    <div style={styles.selectContainer}>
+                        <h4 style={{ margin: "0 0 10px 0", color: "#fff" }}>Select a Subject to view notes:</h4>
+                        <select 
+                            style={styles.selectBox} 
+                            value={selectedSubjectId} 
+                            onChange={handleSubjectChange}
+                        >
+                            <option value="">-- Choose Subject --</option>
+                            {allSubjects.map(sub => (
+                                <option key={sub._id} value={sub._id}>
+                                    {sub.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
-                                {/* Notes List */}
-                                {expandedSubject === subject._id && (
-                                    <div style={styles.notesContainer}>
-                                        {notes.length === 0 ? (
-                                            <div style={styles.noNotes}>No notes uploaded yet</div>
-                                        ) : (
-                                            notes.map(note => (
-                                                <div key={note._id} style={styles.noteItem} onClick={() => handlePreview(note._id)}>
-                                                    <div style={styles.noteIcon}>
-                                                        <FileText size={18} color="#e53935" />
-                                                    </div>
-                                                    <div style={styles.noteInfo}>
-                                                        <span style={styles.noteTitle}>{note.title}</span>
-                                                        {note.description && (
-                                                            <span style={styles.noteDesc}>{note.description}</span>
-                                                        )}
-                                                        <span style={styles.noteDate}>
-                                                            {note.fileName} • {new Date(note.createdAt).toLocaleDateString()}
-                                                        </span>
-                                                    </div>
-                                                    <button
-                                                        style={styles.previewBtn}
-                                                        onClick={(e) => { e.stopPropagation(); handlePreview(note._id); }}
-                                                    >
-                                                        <Eye size={16} />
-                                                    </button>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
+                {/* Notes List for Selected Subject */}
+                {selectedSubjectId && (
+                    <div style={styles.subjectCard}>
+                        <div style={styles.subjectHeader}>
+                            <div style={styles.subjectInfo}>
+                                <span style={styles.subjectCode}>NOTES</span>
+                                <span style={styles.subjectName}>
+                                    {allSubjects.find(s => s._id === selectedSubjectId)?.name}
+                                </span>
                             </div>
-                        ))}
+                            <div style={styles.subjectMeta}>
+                                <span style={styles.noteCount}>{notes.length} notes</span>
+                            </div>
+                        </div>
+
+                        <div style={styles.notesContainer}>
+                            {notesLoading ? (
+                                <div style={styles.loading}>Fetching notes...</div>
+                            ) : notes.length === 0 ? (
+                                <div style={styles.noNotes}>No notes uploaded for this subject yet.</div>
+                            ) : (
+                                notes.map(note => (
+                                    <div key={note._id} style={styles.noteItem} onClick={() => handlePreview(note._id)}>
+                                        <div style={styles.noteIcon}>
+                                            <FileText size={18} color="#e53935" />
+                                        </div>
+                                        <div style={styles.noteInfo}>
+                                            <span style={styles.noteTitle}>{note.title}</span>
+                                            {note.description && (
+                                                <span style={styles.noteDesc}>{note.description}</span>
+                                            )}
+                                            <span style={styles.noteDate}>
+                                                {note.fileName} • {new Date(note.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <button
+                                            style={styles.previewBtn}
+                                            onClick={(e) => { e.stopPropagation(); handlePreview(note._id); }}
+                                        >
+                                            <Eye size={16} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 )}
             </main>
 
-            {/* Preview Loading Overlay */}
+            {/* Preview Overlays */}
             {previewLoading && (
                 <div style={styles.previewOverlay}>
                     <div style={styles.previewLoadingText}>Loading preview...</div>
                 </div>
             )}
 
-            {/* Preview Modal */}
             {previewNote && (
                 <div style={styles.previewOverlay} onClick={closePreview}>
                     <div style={styles.previewModal} onClick={e => e.stopPropagation()}>
-                        {/* Preview Header */}
                         <div style={styles.previewHeader}>
                             <button onClick={closePreview} style={styles.previewBackBtn}>
                                 <ArrowLeft size={18} />
@@ -221,9 +216,6 @@ export default function Notes() {
                             </button>
                             <div style={styles.previewTitleArea}>
                                 <h2 style={styles.previewTitle}>{previewNote.title}</h2>
-                                {previewNote.description && (
-                                    <p style={styles.previewDesc}>{previewNote.description}</p>
-                                )}
                             </div>
                             <div style={styles.previewActions}>
                                 <button onClick={handleDownload} style={styles.previewDownloadBtn}>
@@ -235,26 +227,15 @@ export default function Notes() {
                                 </button>
                             </div>
                         </div>
-
-                        {/* Preview Content */}
                         <div style={styles.previewContent}>
                             {previewNote.fileType === 'image' ? (
-                                <img
-                                    src={previewNote.fileUrl}
-                                    alt={previewNote.title}
-                                    style={styles.previewImage}
-                                />
+                                <img src={previewNote.fileUrl} alt={previewNote.title} style={styles.previewImage} />
                             ) : previewNote.fileType === 'pdf' ? (
-                                <iframe
-                                    src={previewNote.fileUrl}
-                                    style={styles.previewIframe}
-                                    title={previewNote.title}
-                                />
+                                <iframe src={previewNote.fileUrl} style={styles.previewIframe} title={previewNote.title} />
                             ) : (
                                 <div style={styles.previewUnsupported}>
                                     <FileText size={64} color="#ccc" />
                                     <p>Preview not available for this file type.</p>
-                                    <p style={{ fontSize: 14, color: '#888' }}>{previewNote.fileName}</p>
                                     <button onClick={handleDownload} style={styles.previewDownloadBtnLarge}>
                                         <Download size={18} />
                                         <span>Download File</span>
@@ -269,7 +250,29 @@ export default function Notes() {
     );
 }
 
+// Add our existing styles plus the selectContainer and selectBox
 const styles = {
+    // ... we merge existing styles from file
+    selectContainer: {
+        background: "rgba(255, 255, 255, 0.05)",
+        padding: "20px",
+        borderRadius: "16px",
+        marginBottom: "20px",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+    },
+    selectBox: {
+        width: "100%",
+        padding: "12px",
+        fontSize: "15px",
+        background: "rgba(15, 23, 42, 0.8)",
+        color: "#fff",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        borderRadius: "8px",
+        outline: "none",
+        cursor: "pointer",
+    },
+
     page: {
         minHeight: "100vh",
         background: "linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)",
@@ -307,17 +310,28 @@ const styles = {
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent"
     },
+    courseInfoContainer: {
+        background: "rgba(59, 130, 246, 0.1)",
+        borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
+        padding: "15px 20px",
+    },
     courseInfo: {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: "10px",
-        padding: "15px",
-        background: "rgba(59, 130, 246, 0.1)",
-        borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
         color: "#93c5fd",
         fontSize: "14px",
         fontWeight: "500",
+    },
+    courseDescription: {
+        marginTop: "8px",
+        fontSize: "13px",
+        color: "rgba(255, 255, 255, 0.7)",
+        textAlign: "center",
+        fontStyle: "italic",
+        maxWidth: "600px",
+        margin: "8px auto 0",
     },
     main: {
         padding: "20px",

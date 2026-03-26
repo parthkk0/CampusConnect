@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Announcement = require("../Model/Announcement");
+const Notification = require("../Model/Notification");
 
 // GET ALL ANNOUNCEMENTS (Public - for students)
 router.get("/", async (req, res) => {
@@ -32,6 +33,15 @@ router.post("/", async (req, res) => {
         });
 
         await newAnnouncement.save();
+
+        // Create notification for the new announcement
+        const newNotification = new Notification({
+            title: title,
+            message: content || '',
+            type: 'announcement'
+        });
+        await newNotification.save();
+
         res.json({ success: true, message: "Announcement posted successfully", announcement: newAnnouncement });
 
     } catch (error) {

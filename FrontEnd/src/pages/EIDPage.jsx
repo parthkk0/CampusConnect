@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import FaceVerify from "./FaceVerify";
@@ -89,11 +89,11 @@ export default function EIDPage() {
     }
   }
 
-  async function handleVerificationSuccess(student) {
+  const handleVerificationSuccess = useCallback(async (student) => {
     setVerifiedStudent(student);
     setError("");
     await checkCampusWallet(student.roll);
-  }
+  }, [studentId]);
 
   async function checkCampusWallet(roll) {
     setIsLoading(true);
@@ -156,9 +156,9 @@ export default function EIDPage() {
     }
   }
 
-  function handleVerificationError(errorMsg) {
+  const handleVerificationError = useCallback((errorMsg) => {
     setError(`❌ ${errorMsg}`);
-  }
+  }, []);
 
   function resetFlow() {
     setStep("input");

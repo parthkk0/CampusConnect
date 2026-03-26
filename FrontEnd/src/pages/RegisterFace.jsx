@@ -83,7 +83,7 @@ export default function RegisterFace() {
                 // Save the captured face image as profile picture in localStorage
                 const stored = JSON.parse(localStorage.getItem("studentUser"));
                 if (stored) {
-                    stored.photoUrl = faceImage;
+                    stored.photoUrl = res.data.photoUrl || faceImage;
                     localStorage.setItem("studentUser", JSON.stringify(stored));
                 }
                 setStatus({ type: "success", message: "✅ Face Registered Successfully!" });

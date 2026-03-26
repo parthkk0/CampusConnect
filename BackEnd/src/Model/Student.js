@@ -7,7 +7,7 @@ const StudentSchema = new mongoose.Schema({
   password: { type: String }, // Hashed password
   course: String,
   year: String,
-  semester: { type: Number, min: 1, max: 12 }, // Semester number
+
   photoUrl: String,
   faceEmbedding: [Number], // Array of floats representing face encoding
   faceRegisteredAt: Date, // When face was registered

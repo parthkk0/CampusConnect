@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { IdCard, Search, LogOut, Bell, MessageSquare, BookOpen, Wallet, ChevronRight } from "lucide-react";
+import { IdCard, Search, LogOut, Bell, MessageSquare, BookOpen, Wallet, ChevronRight, Zap } from "lucide-react";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 
@@ -11,6 +11,8 @@ export default function StudentHome() {
     const [showProfile, setShowProfile] = useState(false);
     const [balance, setBalance] = useState(0);
     const [isLoadingBalance, setIsLoadingBalance] = useState(true);
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
         // Load student data from local storage
@@ -19,6 +21,7 @@ export default function StudentHome() {
             const parsedStudent = JSON.parse(stored);
             setStudent(parsedStudent);
             fetchWalletBalance(parsedStudent.roll);
+            fetchNotifications();
         } else {
             // Include Clerk session checks if needed, but keeping legacy check as requested
             navigate("/student/login");
@@ -38,6 +41,35 @@ export default function StudentHome() {
         }
     }
 
+    async function fetchNotifications() {
+        try {
+            const res = await axios.get(`${BACKEND_URL}/notifications`);
+            if (res.data.success) {
+                setNotifications(res.data.notifications);
+            }
+        } catch (err) {
+            console.error("Failed to load notifications", err);
+        }
+    }
+
+    async function markAsRead(id) {
+        try {
+            await axios.patch(`${BACKEND_URL}/notifications/${id}/read`);
+            setNotifications(notifications.map(n => n._id === id ? { ...n, isRead: true } : n));
+        } catch (err) {
+            console.error("Failed to mark as read", err);
+        }
+    }
+
+    async function markAllAsRead() {
+        try {
+            await axios.patch(`${BACKEND_URL}/notifications/read-all`);
+            setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+        } catch (err) {
+            console.error("Failed to mark all as read", err);
+        }
+    }
+
     function handleLogout() {
         localStorage.removeItem("studentUser");
         // For Clerk, you'd use signOut() here. Assuming hybrid for now.
@@ -50,15 +82,66 @@ export default function StudentHome() {
 
     return (
         <div style={styles.page}>
+            <style>
+                {`
+                    @keyframes logoPulse {
+                        0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.4)); }
+                        50% { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(250, 204, 21, 0.8)); }
+                        100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.4)); }
+                    }
+                    .logo-pulse {
+                        animation: logoPulse 2s infinite ease-in-out;
+                    }
+                    @keyframes shimmer {
+                        0% { background-position: -200% center; }
+                        100% { background-position: 200% center; }
+                    }
+                    @keyframes float {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-3px); }
+                    }
+                    @keyframes glowText {
+                        0%, 100% { text-shadow: 0 0 10px rgba(147, 197, 253, 0.3); }
+                        50% { text-shadow: 0 0 20px rgba(147, 197, 253, 0.6), 0 0 30px rgba(59, 130, 246, 0.4); }
+                    }
+                    .logo-text-animated {
+                        display: inline-block;
+                        animation: shimmer 4s linear infinite, float 3s ease-in-out infinite, glowText 3s ease-in-out infinite;
+                    }
+                    .logo-text-animated {
+                        display: inline-block;
+                        animation: shimmer 4s linear infinite, float 3s ease-in-out infinite, glowText 3s ease-in-out infinite;
+                    }
+                    .notification-item {
+                        transition: all 0.2s ease;
+                    }
+                    .notification-item:hover {
+                        background: rgba(255, 255, 255, 0.1) !important;
+                        transform: translateX(4px);
+                    }
+                    .btn-ripple {
+                        position: relative;
+                        overflow: hidden;
+                    }
+                `}
+            </style>
             {/* TOP NAVIGATION */}
             <header style={styles.topNav}>
                 <div style={styles.logoContainer}>
-                    <span style={styles.logoText}>Campus Connect</span>
+                    <div className="logo-pulse" style={styles.logoIcon}>
+                        <Zap size={22} fill="currentColor" />
+                    </div>
+                    <span style={styles.logoText} className="logo-text-animated">Campus Connect</span>
                 </div>
                 <div style={styles.navRight}>
-                    <button style={styles.iconButton} aria-label="Notifications" className="btn-ripple">
-                        <Bell size={20} color="#64748B" className="bell-pulse" />
-                        <span style={styles.notificationDot}></span>
+                    <button 
+                        style={styles.iconButton} 
+                        aria-label="Notifications" 
+                        className="btn-ripple"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                    >
+                        <Bell size={20} color={notifications.some(n => !n.isRead) ? "#EF4444" : "#64748B"} className="bell-pulse" />
+                        {notifications.some(n => !n.isRead) && <span style={styles.notificationDot}></span>}
                     </button>
 
                     <button
@@ -74,50 +157,66 @@ export default function StudentHome() {
                         <span style={styles.profileName}>{firstName}</span>
                     </button>
 
-                    {/* PROFILE DROPDOWN */}
-                    {showProfile && (
-                        <div style={styles.profileDropdown}>
-                            <div style={styles.profileDropdownHeader}>
-                                <img
-                                    src={student.photoUrl || "https://ui-avatars.com/api/?name=" + encodeURIComponent(student.name) + "&background=1E293B&color=93C5FD&size=80"}
-                                    alt="Profile"
-                                    style={styles.profileDropdownAvatar}
-                                />
-                                <div>
-                                    <div style={styles.profileDropdownName}>{student.name}</div>
-                                    <div style={styles.profileDropdownRoll}>Roll: {student.roll}</div>
-                                    {student.course && (
-                                        <div style={styles.profileDropdownDetail}>{student.course}</div>
-                                    )}
-                                    {student.semester && (
-                                        <div style={styles.profileDropdownDetail}>Semester {student.semester}</div>
-                                    )}
-                                </div>
+                    {/* NOTIFICATION DROPDOWN */}
+                    {showNotifications && (
+                        <div style={styles.notificationDropdown}>
+                            <div style={styles.notificationDropdownHeader}>
+                                <h3 style={styles.notificationDropdownTitle}>Notifications</h3>
+                                {notifications.some(n => !n.isRead) && (
+                                    <button onClick={markAllAsRead} style={styles.markAllReadBtn}>
+                                        Mark all as read
+                                    </button>
+                                )}
                             </div>
-                            <div style={styles.profileDropdownDivider} />
-                            <Link to="/eid" style={styles.profileDropdownLink}>
-                                <IdCard size={16} /> View E-ID Card
-                            </Link>
-                            <Link to="/student/wallet" style={styles.profileDropdownLink}>
-                                <Wallet size={16} /> My Wallet
-                            </Link>
-                            <Link to="/student/register-face" style={styles.profileDropdownLink}>
-                                <ChevronRight size={16} /> Register Face
-                            </Link>
-                            <div style={styles.profileDropdownDivider} />
-                            <button onClick={handleLogout} style={styles.profileDropdownLogout}>
-                                <LogOut size={16} /> Sign Out
-                            </button>
+                            <div style={styles.notificationList}>
+                                {notifications.length > 0 ? (
+                                    notifications.map((notif) => (
+                                        <div 
+                                            key={notif._id} 
+                                            className="notification-item"
+                                            style={{
+                                                ...styles.notificationItem,
+                                                ...(notif.isRead ? {} : styles.unreadNotification)
+                                            }}
+                                            onClick={() => !notif.isRead && markAsRead(notif._id)}
+                                        >
+                                            <div style={styles.notificationItemContent}>
+                                                <div style={styles.notificationItemTop}>
+                                                    <span style={styles.notificationItemTitle}>{notif.title}</span>
+                                                    {!notif.isRead && <span style={styles.unreadDotInner}></span>}
+                                                </div>
+                                                <p style={styles.notificationItemMessage}>{notif.message}</p>
+                                                <span style={styles.notificationItemTime}>
+                                                    {new Date(notif.createdAt).toLocaleDateString()} {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={styles.emptyNotifications}>
+                                        <Bell size={32} color="rgba(255,255,255,0.2)" />
+                                        <p>No notifications yet</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div style={styles.notificationDropdownFooter}>
+                                <Link to="/announcements" onClick={() => setShowNotifications(false)} style={styles.viewAllLink}>
+                                    View All Announcements
+                                </Link>
+                            </div>
                         </div>
                     )}
                 </div>
             </header>
 
-            {/* Overlay to close profile dropdown when clicking outside */}
-            {showProfile && (
+            {/* Overlay to close dropdowns when clicking outside */}
+            {(showProfile || showNotifications) && (
                 <div
                     style={styles.profileOverlay}
-                    onClick={() => setShowProfile(false)}
+                    onClick={() => {
+                        setShowProfile(false);
+                        setShowNotifications(false);
+                    }}
                 />
             )}
 
@@ -223,6 +322,14 @@ export default function StudentHome() {
                         <LogOut size={16} /> Sign Out
                     </button>
                 </div>
+
+                <div style={styles.supportSection} className="fade-slide-up delay-480">
+                    <span style={styles.supportText}>Need any help?</span>
+                    <a href="mailto:campusconnect.official@gmail.com" style={styles.supportEmail}>
+                        campusconnect.official@gmail.com
+                    </a>
+                    <Link to="/help" style={styles.helpLink}>Visit Help Center</Link>
+                </div>
             </main>
 
         </div>
@@ -275,10 +382,19 @@ const styles = {
         display: "flex",
         alignItems: "center",
     },
+    logoIcon: {
+        color: "#FACC15", // Electric yellow
+        marginRight: "8px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        filter: "drop-shadow(0 0 8px rgba(250, 204, 21, 0.6))"
+    },
     logoText: {
-        fontSize: "18px",
-        fontWeight: "700",
-        background: "linear-gradient(to right, #ffffff, #93c5fd)",
+        fontSize: "19px",
+        fontWeight: "800",
+        background: "linear-gradient(90deg, #ffffff, #93c5fd, #ffffff)",
+        backgroundSize: "200% auto",
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
         letterSpacing: "-0.5px"
@@ -522,6 +638,32 @@ const styles = {
         borderRadius: "20px",
         transition: "all 0.2s"
     },
+    supportSection: {
+        marginTop: "32px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "4px",
+        opacity: 0.8,
+    },
+    supportText: {
+        fontSize: "12px",
+        color: "rgba(255, 255, 255, 0.5)",
+        fontWeight: "500",
+    },
+    supportEmail: {
+        fontSize: "13px",
+        fontWeight: "600",
+        color: "#93c5fd",
+        textDecoration: "none",
+        transition: "color 0.2s",
+    },
+    helpLink: {
+        fontSize: "12px",
+        color: "rgba(255, 255, 255, 0.4)",
+        textDecoration: "underline",
+        marginTop: "4px",
+    },
 
     // PROFILE DROPDOWN
     profileDropdown: {
@@ -600,6 +742,117 @@ const styles = {
         border: "1px solid rgba(239, 68, 68, 0.2)",
         width: "100%",
         transition: "background 0.15s"
+    },
+    
+    // NOTIFICATION DROPDOWN
+    notificationDropdown: {
+        position: "absolute",
+        top: "100%",
+        right: 0,
+        marginTop: "8px",
+        width: "320px",
+        background: "rgba(15, 23, 42, 0.95)",
+        backdropFilter: "blur(20px)",
+        borderRadius: "16px",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        boxShadow: "0 20px 40px rgba(0, 0, 0, 0.5)",
+        zIndex: 100,
+        animation: "fadeSlideDown 0.2s ease",
+        display: "flex",
+        flexDirection: "column",
+        maxHeight: "450px"
+    },
+    notificationDropdownHeader: {
+        padding: "16px",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+    },
+    notificationDropdownTitle: {
+        fontSize: "16px",
+        fontWeight: "700",
+        color: "#ffffff",
+        margin: 0
+    },
+    markAllReadBtn: {
+        background: "none",
+        border: "none",
+        color: "#3B82F6",
+        fontSize: "12px",
+        fontWeight: "600",
+        cursor: "pointer",
+        padding: "4px 8px",
+        borderRadius: "4px",
+        transition: "background 0.2s"
+    },
+    notificationList: {
+        overflowY: "auto",
+        flex: 1,
+    },
+    notificationItem: {
+        padding: "12px 16px",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        gap: "4px"
+    },
+    unreadNotification: {
+        background: "rgba(59, 130, 246, 0.05)",
+    },
+    notificationItemContent: {
+        gap: "4px"
+    },
+    notificationItemTop: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+    },
+    notificationItemTitle: {
+        fontSize: "14px",
+        fontWeight: "600",
+        color: "#ffffff"
+    },
+    unreadDotInner: {
+        width: "8px",
+        height: "8px",
+        backgroundColor: "#EF4444",
+        borderRadius: "50%"
+    },
+    notificationItemMessage: {
+        fontSize: "13px",
+        color: "rgba(255, 255, 255, 0.6)",
+        margin: 0,
+        display: "-webkit-box",
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden"
+    },
+    notificationItemTime: {
+        fontSize: "11px",
+        color: "rgba(255, 255, 255, 0.4)",
+        marginTop: "2px"
+    },
+    emptyNotifications: {
+        padding: "40px 20px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "12px",
+        color: "rgba(255, 255, 255, 0.4)",
+        fontSize: "14px"
+    },
+    notificationDropdownFooter: {
+        padding: "12px",
+        borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+        textAlign: "center"
+    },
+    viewAllLink: {
+        fontSize: "13px",
+        color: "#3B82F6",
+        textDecoration: "none",
+        fontWeight: "600"
     },
     profileOverlay: {
         position: "fixed",

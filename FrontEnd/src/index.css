@@ -191,6 +191,11 @@ select {
   max-width: 100%;
 }
 
+option {
+  background-color: #0F172A; /* Dark navy background for dropdown menus */
+  color: #ffffff;
+}
+
 
 /* ------------------------
    LINKS

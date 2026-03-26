@@ -6,16 +6,16 @@ const Course = require("../Model/Course");
 // GET ALL SUBJECTS (with optional filters)
 router.get("/", async (req, res) => {
     try {
-        const { courseId, year, semester } = req.query;
+        const { courseId, year } = req.query;
         let filter = {};
 
         if (courseId) filter.courseId = courseId;
         if (year) filter.year = parseInt(year);
-        if (semester) filter.semester = parseInt(semester);
+
 
         const subjects = await Subject.find(filter)
             .populate('courseId', 'name code')
-            .sort({ year: 1, semester: 1, name: 1 });
+            .sort({ year: 1, name: 1 });
 
         res.json({ success: true, subjects });
     } catch (error) {
@@ -28,12 +28,12 @@ router.get("/", async (req, res) => {
 router.get("/by-course/:courseId", async (req, res) => {
     try {
         const subjects = await Subject.find({ courseId: req.params.courseId })
-            .sort({ year: 1, semester: 1, name: 1 });
+            .sort({ year: 1, name: 1 });
 
-        // Group by year and semester
+        // Group by year
         const grouped = {};
         subjects.forEach(sub => {
-            const key = `Year ${sub.year} - Sem ${sub.semester}`;
+            const key = `Year ${sub.year}`;
             if (!grouped[key]) grouped[key] = [];
             grouped[key].push(sub);
         });
@@ -45,13 +45,11 @@ router.get("/by-course/:courseId", async (req, res) => {
     }
 });
 
-// GET SUBJECTS FOR STUDENT (based on course, year, semester)
+// GET SUBJECTS FOR STUDENT (based on course and year)
 router.get("/for-student", async (req, res) => {
     try {
-        const { course, year, semester } = req.query;
-
-        if (!course || !semester) {
-            return res.status(400).json({ error: "Course and semester are required" });
+        if (!course || !year) {
+            return res.status(400).json({ error: "Course and year are required" });
         }
 
         // Find the course by name or code
@@ -65,7 +63,7 @@ router.get("/for-student", async (req, res) => {
 
         const subjects = await Subject.find({
             courseId: courseDoc._id,
-            semester: parseInt(semester)
+            year: parseInt(year)
         }).sort({ name: 1 });
 
         res.json({ success: true, subjects, courseName: courseDoc.name });
@@ -78,9 +76,9 @@ router.get("/for-student", async (req, res) => {
 // CREATE SUBJECT (Admin)
 router.post("/", async (req, res) => {
     try {
-        const { name, code, courseId, year, semester } = req.body;
+        const { name, code, courseId, year } = req.body;
 
-        if (!name || !code || !courseId || !year || !semester) {
+        if (!name || !code || !courseId || !year) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
@@ -100,8 +98,7 @@ router.post("/", async (req, res) => {
             name,
             code: code.toUpperCase(),
             courseId,
-            year: parseInt(year),
-            semester: parseInt(semester)
+            year: parseInt(year)
         });
 
         await subject.save();
@@ -116,7 +113,7 @@ router.post("/", async (req, res) => {
 // UPDATE SUBJECT (Admin)
 router.put("/:id", async (req, res) => {
     try {
-        const { name, year, semester } = req.body;
+        const { name, year } = req.body;
 
         const subject = await Subject.findById(req.params.id);
         if (!subject) {
@@ -125,7 +122,7 @@ router.put("/:id", async (req, res) => {
 
         if (name) subject.name = name;
         if (year) subject.year = parseInt(year);
-        if (semester) subject.semester = parseInt(semester);
+
 
         await subject.save();
         res.json({ success: true, message: "Subject updated successfully", subject });

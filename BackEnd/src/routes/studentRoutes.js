@@ -8,13 +8,31 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
 // Configure nodemailer (replace with your actual email credentials or use environment variables)
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER || 'your.email@gmail.com', // fallback or use env
-        pass: process.env.EMAIL_PASS || 'your_app_password'     // fallback or use env
+let transporter;
+async function initMailer() {
+    if (process.env.EMAIL_USER && !process.env.EMAIL_USER.includes('example.com')) {
+        transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+    } else {
+        const testAccount = await nodemailer.createTestAccount();
+        transporter = nodemailer.createTransport({
+            host: "smtp.ethereal.email",
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+                user: testAccount.user, 
+                pass: testAccount.pass, 
+            },
+        });
+        console.log("📨 Ethereal Email Ready: " + testAccount.user);
     }
-});
+}
+initMailer();
 
 const FACE_SERVICE_URL = "http://127.0.0.1:8000";
 
@@ -53,7 +71,6 @@ router.post("/validate-roll", async (req, res) => {
                 email: student.email,
                 course: student.course,
                 year: student.year,
-                semester: student.semester,
                 courseFee: student.courseFee
             }
         });
@@ -84,7 +101,6 @@ router.get("/:studentId", async (req, res) => {
                 email: student.email,
                 course: student.course,
                 year: student.year,
-                semester: student.semester,
                 photoUrl: student.photoUrl,
                 hasFaceRegistered: student.faceEmbedding && student.faceEmbedding.length > 0,
                 createdAt: student.createdAt
@@ -149,6 +165,7 @@ router.post("/signup", async (req, res) => {
 
         // If face image provided, register face
         if (faceImage) {
+            preRegistered.photoUrl = faceImage; // Save captured face image as profile picture
             try {
                 const faceServiceResponse = await axios.post(
                     `${FACE_SERVICE_URL}/register-face`,
@@ -190,8 +207,8 @@ router.post("/signup", async (req, res) => {
                 email: preRegistered.email,
                 course: preRegistered.course,
                 year: preRegistered.year,
-                semester: preRegistered.semester,
                 courseFee: preRegistered.courseFee,
+                photoUrl: preRegistered.photoUrl,
                 hasFaceRegistered: preRegistered.faceEmbedding && preRegistered.faceEmbedding.length > 0
             }
         });
@@ -269,7 +286,6 @@ router.post("/login", async (req, res) => {
                 email: student.email,
                 course: student.course,
                 year: student.year,
-                semester: student.semester,
                 courseFee: student.courseFee,
                 photoUrl: student.photoUrl,
                 hasFaceRegistered: student.faceEmbedding && student.faceEmbedding.length > 0
@@ -285,19 +301,15 @@ router.post("/login", async (req, res) => {
 // SEND OTP - Generate and send OTP for password reset
 router.post("/forgot-password/send-otp", async (req, res) => {
     try {
-        const { roll, email } = req.body;
+        const { roll } = req.body;
 
-        if (!roll || !email) {
-            return res.status(400).json({ error: "Roll number and email are required" });
+        if (!roll) {
+            return res.status(400).json({ error: "Roll number is required" });
         }
 
         const student = await Student.findOne({ roll });
         if (!student) {
             return res.status(404).json({ error: "Student not found" });
-        }
-
-        if (student.email.toLowerCase() !== email.toLowerCase()) {
-            return res.status(401).json({ error: "The provided email does not match our records for this student." });
         }
 
         // Generate 6-digit OTP
@@ -323,9 +335,32 @@ router.post("/forgot-password/send-otp", async (req, res) => {
         };
 
         try {
-            await transporter.sendMail(mailOptions);
+            if (!transporter) await initMailer(); // Ensure it's loaded
+            const info = await transporter.sendMail(mailOptions);
+            const previewUrl = nodemailer.getTestMessageUrl(info);
+            
             console.log(`Email sent successfully to ${student.email}`);
-            res.json({ success: true, message: "OTP sent successfully to your email." });
+            
+            if (previewUrl) {
+                console.log(`Preview URL: ${previewUrl}`);
+                return res.json({ 
+                    success: true, 
+                    message: `DEV EMAIL SENT! Click or copy this link to view the actual email inbox: ${previewUrl}\n\n(Intended for ${student.email})` 
+                });
+            } else {
+                const temp = student.email.split('@');
+                const username = temp[0];
+                const domain = temp[1] || '';
+                let masked = username;
+                
+                if (username.length >= 8) {
+                    masked = username.slice(0, 3) + '****' + username.slice(-5);
+                } else if (username.length > 2) {
+                    masked = username.slice(0, 1) + '***' + username.slice(-1);
+                }
+                
+                return res.json({ success: true, message: `OTP sent successfully to ${masked}@${domain}` });
+            }
         } catch (mailError) {
             console.error("Email sending error:", mailError);
             console.log("=========================================");
@@ -337,7 +372,7 @@ router.post("/forgot-password/send-otp", async (req, res) => {
             // Return success anyway, telling the user to check the backend console
             return res.json({
                 success: true,
-                message: "OTP sent successfully. (Check the backend terminal console for the OTP!)"
+                message: `DEV MODE OTP: Since email failed, your OTP is ${otp} (intended for ${student.email})`
             });
         }
 
@@ -351,22 +386,17 @@ router.post("/forgot-password/send-otp", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
     try {
         console.log(`[RESET] Received Request Body:`, req.body);
-        const { roll, email, newPassword, otp } = req.body;
+        const { roll, newPassword, otp } = req.body;
 
-        if (!roll || !email || !newPassword || !otp) {
-            console.log(`[RESET] Missing fields. roll: ${!!roll}, email: ${!!email}, newPassword: ${!!newPassword}, otp: ${!!otp}`);
-            return res.status(400).json({ error: "Roll number, email, OTP, and new password are required" });
+        if (!roll || !newPassword || !otp) {
+            console.log(`[RESET] Missing fields. roll: ${!!roll}, newPassword: ${!!newPassword}, otp: ${!!otp}`);
+            return res.status(400).json({ error: "Roll number, OTP, and new password are required" });
         }
 
         // 1. Find Student by Roll Number (Explicitly select OTP fields since they are select: false)
         const student = await Student.findOne({ roll }).select('+resetPasswordOtp +resetPasswordOtpExpires');
         if (!student) {
             return res.status(404).json({ error: "Student not found" });
-        }
-
-        // 2. Verify identity using the registered email
-        if (student.email.toLowerCase() !== email.toLowerCase()) {
-            return res.status(401).json({ error: "The provided email does not match our records for this student." });
         }
 
         // 3. Verify OTP

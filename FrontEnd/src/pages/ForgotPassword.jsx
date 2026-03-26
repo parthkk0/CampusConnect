@@ -9,7 +9,6 @@ export default function ForgotPassword() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         roll: "",
-        email: "",
         newPassword: ""
     });
     const [error, setError] = useState("");
@@ -27,12 +26,11 @@ export default function ForgotPassword() {
 
         try {
             const response = await axios.post(`${BACKEND_URL}/students/forgot-password/send-otp`, {
-                roll: formData.roll,
-                email: formData.email
+                roll: formData.roll
             });
 
             if (response.data.success) {
-                setSuccess("OTP sent to your registered email!");
+                setSuccess(response.data.message || "OTP sent to your registered email!");
                 setOtpSent(true);
             }
         } catch (err) {
@@ -88,18 +86,6 @@ export default function ForgotPassword() {
                                 placeholder="Student Roll Number"
                                 value={formData.roll}
                                 onChange={(e) => setFormData({ ...formData, roll: e.target.value })}
-                                style={styles.input}
-                                disabled={otpSent}
-                                required
-                            />
-                        </div>
-                        <div style={styles.inputGroup}>
-                            <ShieldAlert size={18} color="rgba(255, 255, 255, 0.5)" style={styles.icon} />
-                            <input
-                                type="email"
-                                placeholder="Registered Email Address"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 style={styles.input}
                                 disabled={otpSent}
                                 required

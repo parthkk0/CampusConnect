@@ -45,6 +45,7 @@ const announcementRoutes = require("./routes/announcementRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const noteRoutes = require("./routes/noteRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 app.use("/api/pay", paymentRoutes);
 app.use("/api/face", faceRoutes);
@@ -55,6 +56,7 @@ app.use("/api/announcements", announcementRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/notes", noteRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Global error handler - catches any unhandled errors in routes
 app.use((err, req, res, next) => {

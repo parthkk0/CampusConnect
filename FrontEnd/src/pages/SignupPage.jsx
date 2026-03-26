@@ -192,7 +192,6 @@ export default function SignupPage() {
                             <InfoField label="Email" value={formData.email} />
                             <InfoField label="Course" value={formData.course} />
                             <InfoField label="Year" value={formData.year} />
-                            <InfoField label="Semester" value={formData.semester || "N/A"} />
                             <InfoField label="Fee" value={`₹${formData.courseFee || 0}`} />
                         </div>
 

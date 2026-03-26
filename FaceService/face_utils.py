@@ -3,127 +3,203 @@ import cv2
 import base64
 import numpy as np
 import logging
+import threading
+from datetime import datetime
 
-# Configure basic logging for the ML module
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('FaceUtils')
 
-# --- ENVIRONMENT HARDENING ---
-# 1. Disable GPU execution to prevent CUDA/VRAM allocation errors on startup
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-# 2. Suppress excessive TensorFlow OneDNN/C++ warnings
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-# Global state to track if the model loaded successfully
 MODEL_READY = False
 DEEPFACE_ERROR = None
 
-import threading
-
 try:
-    logger.info("Initializing TensorFlow and DeepFace Module...")
+    logger.info("Importing DeepFace...")
     from deepface import DeepFace
 except Exception as e:
     MODEL_READY = False
     DEEPFACE_ERROR = str(e)
     logger.error(f"CRITICAL: Failed to import deepface: {DEEPFACE_ERROR}")
+    DeepFace = None
 
+
+# ---------------------------------------------------------------------------
+# Model warm-up
+# ---------------------------------------------------------------------------
 
 def __init_model_background():
     global MODEL_READY, DEEPFACE_ERROR
     try:
-        # --- MODEL PRE-CACHING ---
-        # Force DeepFace to load the Facenet model into memory immediately upon startup.
-        # This prevents the first user request from hanging or failing due to lazy loading.
-        # We use a dummy 1x1 image just to trigger the initialization cascade inside DeepFace.
-        dummy_img = np.zeros((100, 100, 3), dtype=np.uint8)
-        logger.info("Triggering initial model weights load into memory. This may take a moment (~15s)...")
+        if DeepFace is None:
+            raise ImportError("DeepFace not available.")
+        dummy = np.zeros((100, 100, 3), dtype=np.uint8)
+        logger.info("Warming up model... (~15s)")
         _ = DeepFace.represent(
-            img_path=dummy_img,
+            img_path=dummy,
             model_name="Facenet",
             detector_backend="opencv",
             enforce_detection=False
         )
-        
         MODEL_READY = True
         DEEPFACE_ERROR = None
-        logger.info("✅ DeepFace Facenet model loaded and ready for inference!")
+        logger.info("✅ Facenet model ready for inference!")
     except Exception as e:
         MODEL_READY = False
         DEEPFACE_ERROR = str(e)
-        logger.error(f"CRITICAL: Failed to initialize face recognition model: {DEEPFACE_ERROR}")
-        logger.error("Face scanning features will be disabled until this service is restarted correctly.")
+        logger.error(f"CRITICAL: Model init failed: {DEEPFACE_ERROR}")
+
 
 def init_background():
-    """Start model caching in a background thread."""
     global DEEPFACE_ERROR
-    DEEPFACE_ERROR = "Model is still initializing in the background. Please wait ~15 seconds..."
+    DEEPFACE_ERROR = "Model is initializing. Please wait ~15 seconds..."
     thread = threading.Thread(target=__init_model_background, daemon=True)
     thread.start()
 
+
 def is_model_ready():
-    """Returns True if the ML model is successfully loaded in memory."""
     return MODEL_READY, DEEPFACE_ERROR
 
-def get_embedding(img):
+
+# ---------------------------------------------------------------------------
+# Image Decode
+# ---------------------------------------------------------------------------
+
+def _decode_to_bgr(img_data):
+    """Decode base64 or data-URL to BGR numpy array."""
+    try:
+        if isinstance(img_data, np.ndarray):
+            return img_data, None
+        if isinstance(img_data, str):
+            if img_data.startswith("data:image"):
+                img_data = img_data.split(",")[1]
+            img_bytes = base64.b64decode(img_data)
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if bgr is None:
+                return None, "Failed to decode image – invalid data."
+            return bgr, None
+        return None, "Unsupported image type."
+    except Exception as e:
+        return None, f"Image decode error: {str(e)}"
+
+
+# ---------------------------------------------------------------------------
+# Embedding Extraction  (128-d Facenet, enforces EXACTLY one face)
+# ---------------------------------------------------------------------------
+
+def get_embedding(img_data):
+    """
+    Extract a Facenet 128-d face embedding.
+    Enforces exactly ONE face in the frame.
+    Returns: (embedding_list, error_string)
+    """
     if not MODEL_READY:
-        return None, f"Face service is currently down (Init Error: {DEEPFACE_ERROR})"
+        return None, f"Face service initializing: {DEEPFACE_ERROR}"
+    if DeepFace is None:
+        return None, "Face recognition model is not available."
 
     try:
-        # Handle Base64 string
-        if isinstance(img, str):
-            if img.startswith("data:image"):
-                img = img.split(",")[1]
-            
-            # Decode base64 string to numpy array
-            logger.debug(f"Processing base64 string length: {len(img)}")
-            img_bytes = base64.b64decode(img)
-            nparr = np.frombuffer(img_bytes, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            
-            if img is None:
-                logger.error("cv2.imdecode returned None. Invalid image data provided.")
-                return None, "Failed to decode image"
+        bgr, err = _decode_to_bgr(img_data)
+        if err:
+            return None, err
 
-        if img is None:
-            return None, "Failed to decode image"
+        # Resize for speed (max 640px wide)
+        h, w = bgr.shape[:2]
+        if w > 640:
+            scale = 640 / w
+            bgr = cv2.resize(bgr, (640, int(h * scale)))
 
-        # Use Facenet model (reliable) with opencv detector (fast)
-        result = DeepFace.represent(
-            img_path=img,
-            model_name="Facenet",
-            detector_backend="opencv", 
-            enforce_detection=False 
-        )
-        
-        if not result:
-             return None, "No face detected in the provided image."
-             
-        return result[0]["embedding"], None
+        # Convert BGR -> RGB (DeepFace / TF expects RGB)
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+
+        # Run DeepFace — single pass for detection + embedding
+        try:
+            results = DeepFace.represent(
+                img_path=rgb,
+                model_name="Facenet",
+                detector_backend="opencv",
+                enforce_detection=True
+            )
+        except ValueError:
+            logger.warning("get_embedding: No face detected (enforce_detection=True)")
+            return None, "No face detected. Look directly at the camera in good lighting."
+
+        if not results or len(results) == 0:
+            return None, "No face detected. Please try again."
+
+        if len(results) > 1:
+            logger.warning(f"get_embedding: {len(results)} faces detected — rejecting")
+            return None, f"Multiple faces detected ({len(results)}). Only ONE person must be in frame."
+
+        embedding = results[0]["embedding"]
+        logger.info(f"get_embedding: Success — {len(embedding)}-d embedding.")
+        return embedding, None
+
     except Exception as e:
-        logger.error(f"Error during face embedding generation: {str(e)}")
-        return None, f"Embedding generation failed: {str(e)}"
+        logger.error(f"get_embedding: Unexpected error: {str(e)}")
+        return None, f"Face processing failed: {str(e)}"
 
 
-def verify_embeddings(stored, live, threshold=0.40):
-    stored = np.array(stored)
-    live = np.array(live)
-    
-    # Cosine Distance = 1 - Cosine Similarity
-    # Robust for face recognition (ignores lighting magnitude differences)
-    dot = np.dot(stored, live)
-    norm_stored = np.linalg.norm(stored)
-    norm_live = np.linalg.norm(live)
-    cosine_similarity = dot / (norm_stored * norm_live)
-    distance = 1 - cosine_similarity
-    
-    confidence = max(0, (1 - distance / threshold) * 100)
-    logger.info(f"Face Verification - Distance: {distance:.4f}, Threshold: {threshold}, Confidence: {confidence:.1f}%, Match: {distance < threshold}")
-    
-    # Threshold for Facenet + Cosine:
-    # - 0.40 is the standard recommended threshold for Facenet with cosine distance
-    # - Provides good balance between security and usability with webcam-quality images
-    # - Lower = more strict (may reject valid users under poor lighting/angles)
-    # - Higher = more lenient (may accept different faces)
-    return bool(distance < threshold)
+
+# ---------------------------------------------------------------------------
+# Verification  (cosine distance, threshold 0.45, audit log)
+# ---------------------------------------------------------------------------
+
+def verify_embeddings(stored, live, user_id="unknown", threshold=0.60):
+    """
+    Compare two Facenet embeddings using cosine distance.
+
+    Cosine distance scale:
+      0.0  = identical
+      ~0.3 = same person
+      ~0.6 = different person
+
+    Threshold 0.45 is strict — only high-confidence matches pass.
+
+    Returns: (matched: bool, distance: float)
+    """
+    try:
+        stored_arr = np.array(stored, dtype=np.float64)
+        live_arr   = np.array(live,   dtype=np.float64)
+
+        # --- Dimension check ---
+        if stored_arr.shape != live_arr.shape:
+            logger.error(
+                f"FACE_VERIFY | user_id={user_id} | result=REJECT | "
+                f"reason=DIMENSION_MISMATCH | stored={stored_arr.shape} | live={live_arr.shape}"
+            )
+            return False, 1.0
+
+        # --- Zero-vector guard ---
+        n_stored = np.linalg.norm(stored_arr)
+        n_live   = np.linalg.norm(live_arr)
+        if n_stored < 1e-6 or n_live < 1e-6:
+            logger.error(f"FACE_VERIFY | user_id={user_id} | result=REJECT | reason=ZERO_EMBEDDING")
+            return False, 1.0
+
+        # --- Cosine distance (same math face_recognition.face_distance uses internally) ---
+        cosine_sim = np.dot(stored_arr, live_arr) / (n_stored * n_live)
+        distance   = float(1.0 - cosine_sim)
+
+        matched    = bool(distance < threshold)
+        confidence = max(0.0, (1.0 - distance / threshold) * 100.0) if matched else 0.0
+
+        # --- Structured audit log (every attempt, every user) ---
+        logger.info(
+            f"FACE_VERIFY | user_id={user_id} | "
+            f"distance={distance:.4f} | threshold={threshold} | "
+            f"confidence={confidence:.1f}% | "
+            f"result={'MATCH' if matched else 'REJECT'} | "
+            f"timestamp={datetime.now().isoformat()}"
+        )
+
+        return matched, distance
+
+    except Exception as e:
+        logger.error(
+            f"FACE_VERIFY | user_id={user_id} | result=ERROR | error={str(e)} | "
+            f"timestamp={datetime.now().isoformat()}"
+        )
+        return False, 1.0

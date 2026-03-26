@@ -30,7 +30,7 @@ router.get("/:id", async (req, res) => {
 // CREATE COURSE (Admin)
 router.post("/", async (req, res) => {
     try {
-        const { name, code, description, totalYears, semestersPerYear } = req.body;
+        const { name, code, description, totalYears } = req.body;
 
         if (!name || !code || !totalYears) {
             return res.status(400).json({ error: "Name, code, and totalYears are required" });
@@ -46,8 +46,7 @@ router.post("/", async (req, res) => {
             name,
             code: code.toUpperCase(),
             description: description || '',
-            totalYears,
-            semestersPerYear: semestersPerYear || 2
+            totalYears
         });
 
         await course.save();
@@ -62,7 +61,7 @@ router.post("/", async (req, res) => {
 // UPDATE COURSE (Admin)
 router.put("/:id", async (req, res) => {
     try {
-        const { name, description, totalYears, semestersPerYear, isActive } = req.body;
+        const { name, description, totalYears, isActive } = req.body;
 
         const course = await Course.findById(req.params.id);
         if (!course) {
@@ -72,7 +71,7 @@ router.put("/:id", async (req, res) => {
         if (name) course.name = name;
         if (description !== undefined) course.description = description;
         if (totalYears) course.totalYears = totalYears;
-        if (semestersPerYear) course.semestersPerYear = semestersPerYear;
+
         if (isActive !== undefined) course.isActive = isActive;
 
         await course.save();

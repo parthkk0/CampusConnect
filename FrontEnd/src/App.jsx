@@ -16,6 +16,8 @@ import LostFound from "./pages/LostFound";
 import Announcements from "./pages/Announcements";
 import Notes from "./pages/Notes";
 import WalletPage from "./pages/WalletPage";
+import About from "./pages/About";
+import Help from "./pages/Help";
 import Navbar from "./components/Navbar"; // Keep for Admin/Legacy pages if needed, or remove if unused
 
 function App() {
@@ -50,6 +52,10 @@ function App() {
 
         {/* UTILS */}
         <Route path="/face" element={<FaceVerify />} />
+
+        {/* INFO PAGES */}
+        <Route path="/about" element={<About />} />
+        <Route path="/help" element={<Help />} />
       </Routes>
     </>
   );

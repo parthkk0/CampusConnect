@@ -8,28 +8,34 @@ export default function Announcements() {
     const navigate = useNavigate();
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [student, setStudent] = useState(null);
+    const [authChecked, setAuthChecked] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem("studentUser");
         if (stored) {
             setStudent(JSON.parse(stored));
+            fetchAnnouncements();
         } else {
             navigate("/student/login");
-            return;
         }
-        fetchAnnouncements();
+        setAuthChecked(true);
     }, [navigate]);
 
     const fetchAnnouncements = async () => {
         try {
             setLoading(true);
+            setError(null);
             const res = await axios.get(`${BACKEND_URL}/announcements`);
             if (res.data.success) {
                 setAnnouncements(res.data.announcements);
+            } else {
+                setError("Failed to load announcements.");
             }
-        } catch (error) {
-            console.error("Failed to fetch announcements:", error);
+        } catch (err) {
+            console.error("Failed to fetch announcements:", err);
+            setError("Could not connect to server. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -45,6 +51,13 @@ export default function Announcements() {
             minute: '2-digit'
         });
     };
+
+    // Show loading spinner while checking auth
+    if (!authChecked) return (
+        <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={styles.loading}>Verifying session...</div>
+        </div>
+    );
 
     if (!student) return null;
 
@@ -64,6 +77,17 @@ export default function Announcements() {
             <main style={styles.main}>
                 {loading ? (
                     <div style={styles.loading}>Loading announcements...</div>
+                ) : error ? (
+                    <div style={styles.empty}>
+                        <FileText size={48} color="#f87171" />
+                        <p style={{ color: "#f87171" }}>{error}</p>
+                        <button
+                            onClick={fetchAnnouncements}
+                            style={{ marginTop: "12px", padding: "10px 24px", borderRadius: "10px", background: "#3B82F6", color: "#fff", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
+                        >
+                            Retry
+                        </button>
+                    </div>
                 ) : announcements.length === 0 ? (
                     <div style={styles.empty}>
                         <FileText size={48} color="#ccc" />

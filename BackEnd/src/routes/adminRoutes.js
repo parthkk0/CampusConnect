@@ -83,7 +83,7 @@ router.post("/logout", isAuthenticated, (req, res) => {
 // ADD SINGLE STUDENT (Pre-register)
 router.post("/students/add", isAuthenticated, async (req, res) => {
     try {
-        const { roll, name, email, course, year, semester, courseFee } = req.body;
+        const { roll, name, email, course, year, courseFee } = req.body;
 
         // Validate required fields
         if (!roll || !name || !email) {
@@ -105,8 +105,7 @@ router.post("/students/add", isAuthenticated, async (req, res) => {
             name,
             email,
             course,
-            year,
-            semester: semester || 1,
+            year: year || "1st",
             courseFee: courseFee || 0,
             isPreRegistered: true,
             preRegisteredBy: req.admin.id,
@@ -125,7 +124,6 @@ router.post("/students/add", isAuthenticated, async (req, res) => {
                 email: student.email,
                 course: student.course,
                 year: student.year,
-                semester: student.semester,
                 courseFee: student.courseFee
             }
         });
@@ -152,7 +150,7 @@ router.post("/students/bulk-add", isAuthenticated, async (req, res) => {
 
         for (const studentData of students) {
             try {
-                const { roll, name, email, course, year, semester, courseFee } = studentData;
+                const { roll, name, email, course, year, courseFee } = studentData;
 
                 if (!roll || !name || !email) {
                     results.failed.push({
@@ -181,8 +179,7 @@ router.post("/students/bulk-add", isAuthenticated, async (req, res) => {
                     name,
                     email,
                     course,
-                    year,
-                    semester: semester || 1,
+                    year: year || "1st",
                     courseFee: courseFee || 0,
                     isPreRegistered: true,
                     preRegisteredBy: req.admin.id,
@@ -256,7 +253,7 @@ router.get("/students", isAuthenticated, async (req, res) => {
 router.put("/students/:id", isAuthenticated, async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, course, year, semester, courseFee } = req.body;
+        const { name, email, course, year, courseFee } = req.body;
 
         const student = await Student.findById(id);
 
@@ -269,7 +266,7 @@ router.put("/students/:id", isAuthenticated, async (req, res) => {
         if (email) student.email = email;
         if (course) student.course = course;
         if (year) student.year = year;
-        if (semester) student.semester = parseInt(semester);
+
         if (courseFee !== undefined) student.courseFee = courseFee;
 
         await student.save();
@@ -335,6 +332,31 @@ router.post("/create-default", async (req, res) => {
     } catch (error) {
         console.error("Create admin error:", error);
         res.status(500).json({ error: "Failed to create admin" });
+    }
+});
+
+// RESET STUDENT FACE - Force re-registration
+router.delete("/students/:id/face", isAuthenticated, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const student = await Student.findById(id);
+
+        if (!student) {
+            return res.status(404).json({ error: "Student not found" });
+        }
+
+        student.faceEmbedding = [];
+        student.faceRegisteredAt = null;
+        student.photoUrl = null;
+        await student.save();
+
+        res.json({
+            success: true,
+            message: `Face data cleared for ${student.roll}. Student must re-register.`
+        });
+    } catch (error) {
+        console.error("Reset face error:", error);
+        res.status(500).json({ error: "Failed to reset face data" });
     }
 });
 

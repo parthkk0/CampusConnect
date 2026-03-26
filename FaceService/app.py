@@ -4,9 +4,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from face_utils import get_embedding, verify_embeddings, is_model_ready, init_background
 
-# Configure basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Configure basic logging for all modules
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', force=True)
 logger = logging.getLogger('FlaskApp')
+# Ensure FaceUtils log level is also INFO
+logging.getLogger('FaceUtils').setLevel(logging.INFO)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -122,23 +124,26 @@ def verify_face_with_stored():
 
         stored_embedding = request.json.get("storedEmbedding")
         live_image = request.json.get("liveImage")
+        student_id = request.json.get("studentId", "unknown")
 
         if not stored_embedding or not live_image:
             return jsonify({"error": "Missing storedEmbedding or liveImage"}), 400
 
-        # Generate embedding from live image
+        # Generate 128-d embedding from live image
         live_embedding, error = get_embedding(live_image)
         if error:
+            logger.warning(f"FACE_VERIFY | user_id={student_id} | result=REJECT | reason=EMBEDDING_FAILED | error={error}")
             return jsonify({"error": error}), 400
 
-        # Verify embeddings
-        matched = verify_embeddings(stored_embedding, live_embedding)
+        # Compare ONLY with this student's stored encoding — cross-user comparison is impossible by design
+        matched, distance = verify_embeddings(stored_embedding, live_embedding, user_id=student_id)
         
-        logger.info(f"Face verification attempt: {'SUCCESS' if matched else 'FAILED'}")
+        logger.info(f"Face verification attempt: {'SUCCESS' if matched else 'FAILED'} | student_id={student_id}")
         return jsonify({
             "success": True,
             "matched": matched,
-            "message": "Face verified successfully" if matched else "Face verification failed"
+            "match_score": round(float(distance), 4),
+            "message": "Face verified successfully" if matched else "Face verification failed - face does not match"
         })
 
     except Exception as e:

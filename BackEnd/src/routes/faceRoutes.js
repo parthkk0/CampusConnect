@@ -156,17 +156,20 @@ router.post("/verify", async (req, res) => {
     }
 
     // Call Face Service to verify
+    // Passes studentId so FaceService can audit-log each attempt per user
     const faceServiceResponse = await callFaceService("/verify-face", {
       storedEmbedding: student.faceEmbedding,
-      liveImage
+      liveImage,
+      studentId
     });
 
-    const { matched } = faceServiceResponse.data;
+    const { matched, match_score } = faceServiceResponse.data;
 
     if (matched) {
       res.json({
         success: true,
         matched: true,
+        match_score: match_score ?? null,
         message: "Face verified successfully",
         student: {
           roll: student.roll,
@@ -181,7 +184,8 @@ router.post("/verify", async (req, res) => {
       res.json({
         success: true,
         matched: false,
-        message: "Face verification failed"
+        match_score: match_score ?? null,
+        message: "Face verification failed - face does not match"
       });
     }
 
