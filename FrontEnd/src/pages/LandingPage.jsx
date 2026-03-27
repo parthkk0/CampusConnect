@@ -81,6 +81,23 @@ export default function LandingPage() {
                         </div>
                     </Link>
                 </div>
+
+                {/* Demo Credentials for Recruiters */}
+                <div style={styles.demoSection} className="animate-slide-up delay-300">
+                    <div style={styles.demoLabel}>
+                        <span style={styles.pulseDot}></span> Demo Access
+                    </div>
+                    <div style={styles.demoContent}>
+                        <div style={styles.demoField}>
+                            <span style={styles.demoKey}>Roll No:</span>
+                            <span style={styles.demoValue}>1</span>
+                        </div>
+                        <div style={styles.demoField}>
+                            <span style={styles.demoKey}>Password:</span>
+                            <span style={styles.demoValue}>User@123</span>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     );
@@ -281,5 +298,55 @@ const styles = {
         background: "transparent",
         width: "100%",
         borderTop: "1px solid rgba(255,255,255,0.1)",
+    },
+    demoSection: {
+        marginTop: "48px",
+        padding: "16px 24px",
+        background: "rgba(255, 255, 255, 0.05)",
+        backdropFilter: "blur(12px)",
+        borderRadius: "20px",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "12px",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    },
+    demoLabel: {
+        fontSize: "13px",
+        fontWeight: "700",
+        color: "#60A5FA",
+        textTransform: "uppercase",
+        letterSpacing: "1.5px",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+    },
+    pulseDot: {
+        width: "8px",
+        height: "8px",
+        background: "#60A5FA",
+        borderRadius: "50%",
+        boxShadow: "0 0 0 0 rgba(96, 165, 250, 0.7)",
+        animation: "pulse 2s infinite",
+    },
+    demoContent: {
+        display: "flex",
+        gap: "24px",
+        justifyContent: "center",
+    },
+    demoField: {
+        display: "flex",
+        gap: "8px",
+        fontSize: "14px",
+    },
+    demoKey: {
+        color: "rgba(255, 255, 255, 0.5)",
+        fontWeight: "500",
+    },
+    demoValue: {
+        color: "rgba(255, 255, 255, 1)",
+        fontWeight: "700",
+        letterSpacing: "0.5px",
     }
 };
