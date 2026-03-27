@@ -59,6 +59,24 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/notifications", notificationRoutes);
 
+// System Check Endpoint for Remote Diagnosis
+app.get("/api/system-check", async (req, res) => {
+  res.json({
+    status: "online",
+    nodeVersion: process.version,
+    mongodb: {
+      state: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    },
+    env: {
+      MONGO_URI: !!process.env.MONGO_URI,
+      FACE_SERVICE_URL: !!process.env.FACE_SERVICE_URL,
+      EMAIL_USER: !!process.env.EMAIL_USER,
+      EMAIL_PASS: !!process.env.EMAIL_PASS,
+      PORT: process.env.PORT || 5000
+    }
+  });
+});
+
 // Global error handler - catches any unhandled errors in routes
 app.use((err, req, res, next) => {
   console.error("💥 Unhandled Error:", err.message);
