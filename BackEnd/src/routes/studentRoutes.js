@@ -12,7 +12,9 @@ let transporter;
 async function initMailer() {
     if (process.env.EMAIL_USER && !process.env.EMAIL_USER.includes('example.com')) {
         transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true, // Use SSL
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
