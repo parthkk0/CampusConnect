@@ -65,6 +65,22 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error", details: err.message });
 });
 
+// System Check Endpoint for Remote Diagnosis
+app.get("/api/system-check", (req, res) => {
+  res.json({
+    status: "online",
+    nodeVersion: process.version,
+    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    env: {
+      MONGO_URI: !!process.env.MONGO_URI,
+      FACE_SERVICE_URL: !!process.env.FACE_SERVICE_URL,
+      VITE_BACKEND_URL: !!process.env.VITE_BACKEND_URL, // Though this is for frontend
+      PORT: process.env.PORT || "default (5000)"
+    },
+    bcryptType: typeof require('bcryptjs').hash === 'function' ? 'bcryptjs' : 'unknown'
+  });
+});
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('⚠️ Unhandled Rejection:', reason);

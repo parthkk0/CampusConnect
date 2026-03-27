@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const Admin = require("../Model/Admin");
 const Student = require("../Model/Student");
 
@@ -69,7 +69,10 @@ router.post("/login", async (req, res) => {
 
     } catch (error) {
         console.error("Admin login error:", error);
-        res.status(500).json({ error: "Login failed" });
+        res.status(500).json({ 
+            error: "Login failed", 
+            details: error.message 
+        });
     }
 });
 

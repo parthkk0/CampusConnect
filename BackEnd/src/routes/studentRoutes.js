@@ -3,7 +3,7 @@ const router = express.Router();
 const axios = require("axios");
 const Student = require("../Model/Student");
 const Admin = require("../Model/Admin");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
@@ -294,7 +294,10 @@ router.post("/login", async (req, res) => {
 
     } catch (error) {
         console.error("Student login error:", error);
-        res.status(500).json({ error: "Login failed" });
+        res.status(500).json({ 
+            error: "Login failed",
+            details: error.message 
+        });
     }
 });
 
