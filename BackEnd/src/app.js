@@ -66,6 +66,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error", details: err.message });
 });
 
+let mongoError = null;
+
+mongoose.connection.on('error', (err) => {
+  mongoError = err.message;
+  console.error("❌ MongoDB Connection Error Event:", err.message);
+});
+
 // System Check Endpoint for Remote Diagnosis
 app.get("/api/system-check", async (req, res) => {
   let faceServicePing = "not checked";
@@ -85,7 +92,8 @@ app.get("/api/system-check", async (req, res) => {
       state: mongoose.connection.readyState === 1 ? "connected" : 
              mongoose.connection.readyState === 2 ? "connecting" : 
              mongoose.connection.readyState === 3 ? "disconnecting" : "disconnected",
-      host: mongoose.connection.host || "none"
+      host: mongoose.connection.host || "none",
+      error: mongoError || (mongoose.connection.readyState === 0 ? "Initial connection failed or not started" : null)
     },
     env: {
       MONGO_URI: !!process.env.MONGO_URI,
