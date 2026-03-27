@@ -4,8 +4,8 @@ const bcrypt = require("bcryptjs");
 const Admin = require("../Model/Admin");
 const Student = require("../Model/Student");
 
-// Simple session storage (for MVP - use JWT in production)
-const activeSessions = new Map();
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "campus_connect_secret_key";
 
 // Middleware to check if admin is authenticated
 function isAuthenticated(req, res, next) {
@@ -17,12 +17,13 @@ function isAuthenticated(req, res, next) {
 
     const token = authHeader.substring(7);
 
-    if (!activeSessions.has(token)) {
-        return res.status(401).json({ error: "Unauthorized - Invalid token" });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.admin = decoded;
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: "Unauthorized - Invalid or expired token" });
     }
-
-    req.admin = activeSessions.get(token);
-    next();
 }
 
 // ADMIN LOGIN
@@ -48,15 +49,12 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        // Generate simple token (in production, use JWT)
-        const token = Buffer.from(`${admin._id}-${Date.now()}`).toString('base64');
-
-        // Store session
-        activeSessions.set(token, {
-            id: admin._id,
-            username: admin.username,
-            role: admin.role
-        });
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: admin._id, username: admin.username, role: admin.role },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
         res.json({
             success: true,
@@ -78,8 +76,7 @@ router.post("/login", async (req, res) => {
 
 // ADMIN LOGOUT
 router.post("/logout", isAuthenticated, (req, res) => {
-    const token = req.headers.authorization.substring(7);
-    activeSessions.delete(token);
+    // With JWT, logout is usually handled by frontend (deleting the token)
     res.json({ success: true, message: "Logged out successfully" });
 });
 
