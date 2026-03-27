@@ -6,7 +6,11 @@ const axios = require("axios");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: ["https://campus-connect-ui-eta.vercel.app", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
