@@ -37,7 +37,9 @@ export default function SignupPage() {
                 setStatus({ type: "success", message: "✅ Roll number verified! Please complete registration." });
             }
         } catch (err) {
-            setStatus({ type: "error", message: err.response?.data?.error || "Roll number verification failed" });
+            console.error("Verification Error:", err);
+            const errMsg = err.response?.data?.error || (err.message === "Network Error" ? "Backend unreachable. Check CORS/Server status." : "Roll number verification failed");
+            setStatus({ type: "error", message: errMsg });
         } finally {
             setIsLoading(false);
         }
